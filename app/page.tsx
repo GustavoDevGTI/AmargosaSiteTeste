@@ -4,18 +4,26 @@ import { useState, type CSSProperties } from "react";
 
 type Device = "desktop" | "tablet" | "mobile";
 type PortalPage = "home" | "obras";
-type HeaderStyle = "recife" | "belem" | "salvador" | "essential";
-type MenuStyle = "recife" | "belem" | "salvador" | "minimal";
-type HeroStyle = "recife" | "belem" | "salvador" | "search";
-type ServicesStyle = "icons" | "cards" | "list";
-type FooterStyle = "institutional" | "compact" | "portal";
+type UtilityStyle = "generic" | "recife" | "belem" | "aracaju" | "beloHorizonte";
+type HeaderStyle = "generic" | "recife" | "belem" | "salvador" | "essential" | "campoGrande" | "aracaju" | "uberlandia" | "beloHorizonte" | "curitiba";
+type MenuStyle = "generic" | "recife" | "belem" | "salvador" | "minimal" | "campoGrande" | "aracaju" | "uberlandia" | "beloHorizonte" | "curitiba";
+type SearchStyle = "generic" | "header" | "campoGrande" | "uberlandia" | "curitiba";
+type HeroStyle = "generic" | "recife" | "belem" | "salvador" | "search" | "aracaju" | "beloHorizonte";
+type ServicesStyle = "generic" | "icons" | "cards" | "list" | "campoGrande" | "uberlandia" | "beloHorizonte";
+type NewsStyle = "generic" | "grid" | "list" | "aracaju" | "curitiba";
+type TransparencyStyle = "generic" | "strip" | "cards" | "compact";
+type FooterStyle = "generic" | "institutional" | "compact" | "portal" | "beloHorizonte" | "curitiba";
 type FontStyle = "inter" | "source" | "montserrat" | "merriweather";
 
 type DesignConfig = {
+  utility: UtilityStyle;
   header: HeaderStyle;
   menu: MenuStyle;
+  search: SearchStyle;
   hero: HeroStyle;
   services: ServicesStyle;
+  news: NewsStyle;
+  transparency: TransparencyStyle;
   footer: FooterStyle;
   font: FontStyle;
   primary: string;
@@ -43,13 +51,21 @@ const essentialLinks = ["Transparência", "e-SIC", "Ouvidoria", "Diário Oficial
 const heroTitle = "Serviços públicos de um jeito simples.";
 const heroDescription = "Encontre informações, solicite atendimentos e acompanhe a Prefeitura em um só lugar.";
 
+const newsCards = [
+  ["GESTÃO", "Prefeitura amplia atendimento digital ao cidadão", "Serviços passam a reunir orientações e acompanhamento em uma experiência única."],
+  ["CIDADE", "Praças recebem novas ações de cuidado urbano", "Cronograma integra iluminação, jardinagem e acessibilidade."],
+  ["AGENDA", "Feira municipal movimenta o centro neste fim de semana", "Programação valoriza produtores, cultura e economia local."],
+];
+
 const layers = [
+  ["Barra de acessibilidade", "protected"],
   ["Cabeçalho", "protected"],
-  ["Destaque principal", "selected"],
-  ["Busca de serviços", "protected"],
+  ["Menu principal", "protected"],
+  ["Busca", "protected"],
+  ["Carrossel / destaque", "selected"],
   ["Serviços prioritários", "restricted"],
-  ["Acessos essenciais", "protected"],
   ["Notícias e agenda", "optional"],
+  ["Transparência", "protected"],
   ["Rodapé", "protected"],
 ];
 
@@ -64,11 +80,15 @@ const worksLayers = [
 ];
 
 const defaultDesign: DesignConfig = {
-  header: "recife",
-  menu: "belem",
-  hero: "salvador",
-  services: "icons",
-  footer: "institutional",
+  utility: "generic",
+  header: "generic",
+  menu: "generic",
+  search: "generic",
+  hero: "generic",
+  services: "generic",
+  news: "generic",
+  transparency: "generic",
+  footer: "generic",
   font: "inter",
   primary: "#157c62",
   secondary: "#51b89e",
@@ -79,11 +99,17 @@ const defaultDesign: DesignConfig = {
   radius: "soft",
 };
 
-const templates: Array<{ id: string; name: string; reference: string; description: string; config: DesignConfig }> = [
-  { id: "amargosa", name: "Essencial Amargosa", reference: "Base municipal", description: "Busca, serviços e transparência em primeiro plano.", config: defaultDesign },
-  { id: "recife", name: "Serviços laterais", reference: "Inspirado em Recife", description: "Cabeçalho utilitário, públicos e grade lateral de serviços.", config: { ...defaultDesign, header: "recife", menu: "recife", hero: "recife", services: "icons", footer: "portal", radius: "square" } },
-  { id: "belem", name: "Menu cívico", reference: "Inspirado em Belém", description: "Acessibilidade forte, menu compacto e grande área editorial.", config: { ...defaultDesign, header: "belem", menu: "belem", hero: "belem", services: "cards", footer: "compact", spacing: "airy", radius: "soft" } },
-  { id: "salvador", name: "Impacto visual", reference: "Inspirado em Salvador", description: "Cabeçalho em camadas e carrossel fotográfico de alta presença.", config: { ...defaultDesign, header: "salvador", menu: "salvador", hero: "salvador", services: "cards", footer: "institutional", width: "wide", radius: "square" } },
+type PortalTemplate = { id: string; name: string; reference: string; medal: "Diamante" | "Ouro" | "Prata"; score: number; siteUrl: string; description: string; config: DesignConfig };
+
+const templates: PortalTemplate[] = [
+  { id: "recife", name: "Serviços laterais", reference: "Recife · PE", medal: "Ouro", score: 92.9, siteUrl: "https://www2.recife.pe.gov.br/", description: "Cabeçalho utilitário, públicos e grade lateral de serviços.", config: { ...defaultDesign, utility: "recife", header: "recife", menu: "recife", search: "header", hero: "recife", services: "icons", news: "grid", transparency: "strip", footer: "portal", radius: "square" } },
+  { id: "belem", name: "Menu cívico", reference: "Belém · PA", medal: "Prata", score: 76.91, siteUrl: "https://prefeitura.belem.pa.gov.br/", description: "Acessibilidade forte, menu compacto e grande área editorial.", config: { ...defaultDesign, utility: "belem", header: "belem", menu: "belem", search: "header", hero: "belem", services: "cards", news: "list", transparency: "compact", footer: "compact", spacing: "airy", radius: "soft" } },
+  { id: "salvador", name: "Impacto visual", reference: "Salvador · BA", medal: "Prata", score: 77.46, siteUrl: "https://salvador.ba.gov.br/", description: "Cabeçalho em camadas e carrossel fotográfico de alta presença.", config: { ...defaultDesign, utility: "recife", header: "salvador", menu: "salvador", search: "header", hero: "salvador", services: "cards", news: "grid", transparency: "cards", footer: "institutional", width: "wide", radius: "square" } },
+  { id: "campo-grande", name: "Busca e públicos", reference: "Campo Grande · MS", medal: "Diamante", score: 100, siteUrl: "https://www.campogrande.ms.gov.br/", description: "Busca monumental sobre o destaque e faixa de serviços por público.", config: { ...defaultDesign, utility: "recife", header: "campoGrande", menu: "campoGrande", search: "campoGrande", hero: "search", services: "campoGrande", news: "grid", transparency: "cards", footer: "portal", radius: "square" } },
+  { id: "aracaju", name: "Editorial institucional", reference: "Aracaju · SE", medal: "Diamante", score: 97.49, siteUrl: "https://www.aracaju.se.gov.br/", description: "Barra acessível, navegação limpa, campanha ampla e notícias em faixa.", config: { ...defaultDesign, utility: "aracaju", header: "aracaju", menu: "aracaju", search: "header", hero: "aracaju", services: "cards", news: "aracaju", transparency: "strip", footer: "institutional", width: "contained", radius: "soft" } },
+  { id: "uberlandia", name: "Cidade em primeiro plano", reference: "Uberlândia · MG", medal: "Diamante", score: 97.1, siteUrl: "https://www.uberlandia.mg.gov.br/", description: "Imagem imersiva, busca sobreposta e atalhos visuais por tema.", config: { ...defaultDesign, utility: "recife", header: "uberlandia", menu: "uberlandia", search: "uberlandia", hero: "salvador", services: "uberlandia", news: "grid", transparency: "compact", footer: "institutional", radius: "round" } },
+  { id: "belo-horizonte", name: "Portal controlado", reference: "Belo Horizonte · MG", medal: "Diamante", score: 95, siteUrl: "https://prefeitura.pbh.gov.br/", description: "Acessibilidade destacada, carrossel controlado e acessos rápidos.", config: { ...defaultDesign, utility: "beloHorizonte", header: "beloHorizonte", menu: "beloHorizonte", search: "header", hero: "beloHorizonte", services: "beloHorizonte", news: "list", transparency: "cards", footer: "beloHorizonte", radius: "soft" } },
+  { id: "curitiba", name: "Busca com histórias", reference: "Curitiba · PR", medal: "Ouro", score: 94.16, siteUrl: "https://www.curitiba.pr.gov.br/", description: "Busca central, termos populares e notícias em formato de histórias.", config: { ...defaultDesign, utility: "recife", header: "curitiba", menu: "curitiba", search: "curitiba", hero: "search", services: "icons", news: "curitiba", transparency: "strip", footer: "curitiba", radius: "round" } },
 ];
 
 function hexToRgb(hex: string) {
@@ -112,6 +138,7 @@ function technicalScore(config: DesignConfig) {
   if (contrastRatio(config.accent, "#ffffff") < 4.5) score -= 18;
   if (contrastRatio("#293731", config.surface) < 4.5) score -= 20;
   if (config.hero === "salvador") score -= 2.4;
+  if (config.hero === "beloHorizonte") score -= 1.2;
   if (config.menu === "belem") score -= 1.2;
   if (config.spacing === "compact") score -= 1.8;
   return Math.max(0, Math.round(score * 10) / 10);
@@ -127,7 +154,7 @@ export default function Home() {
   const [toast, setToast] = useState<string | null>(null);
   const [publishOpen, setPublishOpen] = useState(false);
   const [design, setDesign] = useState<DesignConfig>(defaultDesign);
-  const [activeTemplate, setActiveTemplate] = useState("amargosa");
+  const [activeTemplate, setActiveTemplate] = useState("custom");
   const [blockedChange, setBlockedChange] = useState<{ label: string; score: number } | null>(null);
   const pntpScore = technicalScore(design);
 
@@ -191,14 +218,14 @@ export default function Home() {
         {leftTab === "structure" ? <>
           <div className="panel-heading"><span>{portalPage === "obras" ? "Obras e Urbanismo" : "Página inicial"}</span><button aria-label="Mais opções">•••</button></div>
           <nav className="layer-tree" aria-label="Estrutura da página">
-            {(portalPage === "obras" ? worksLayers : layers).map(([label, kind]) => <button className={`layer ${kind}`} key={label} onClick={() => label === "Destaque principal" || label === "Título e metadados" ? setRightTab("properties") : notify(kind === "protected" ? `${label} é um bloco protegido` : `${label} selecionado`)}><span>≡</span><strong>{label}</strong>{kind === "protected" && <em>Protegido</em>}</button>)}
+            {(portalPage === "obras" ? worksLayers : layers).map(([label, kind]) => <button className={`layer ${kind}`} key={label} onClick={() => label === "Carrossel / destaque" || label === "Título e metadados" ? setRightTab("properties") : notify(kind === "protected" ? `${label} é um bloco protegido` : `${label} selecionado`)}><span>≡</span><strong>{label}</strong>{kind === "protected" && <em>Protegido</em>}</button>)}
           </nav>
           <button className="add-block" onClick={() => setLeftTab("templates")}>▦ Trocar ponto de partida</button>
           <div className="legend"><span><i className="dot protected-dot" /> Protegido</span><span><i className="dot restricted-dot" /> Restrito</span></div>
         </> : <>
           <div className="panel-heading"><span>Templates genéricos</span><button aria-label="Informações">i</button></div>
-          <div className="template-library">{templates.map((template) => <button className={activeTemplate === template.id ? "active" : ""} key={template.id} onClick={() => applyTemplate(template)}><span className={`template-thumb template-${template.id}`}><i /><i /><i /></span><span><small>{template.reference}</small><strong>{template.name}</strong><em>{template.description}</em></span>{activeTemplate === template.id && <b>Em uso</b>}</button>)}</div>
-          <p className="library-note">Os templates são pontos de partida. Cabeçalho, menu, destaque, serviços e rodapé podem ser misturados livremente.</p>
+          <div className="template-library">{templates.map((template) => <button className={activeTemplate === template.id ? "active" : ""} key={template.id} onClick={() => applyTemplate(template)}><span className={`template-thumb template-${template.id}`}><i /><i /><i /></span><span><small>{template.reference}</small><strong>{template.name}</strong><em>{template.description}</em><span className={`medal medal-${template.medal.toLowerCase()}`}>{template.medal} · PNTP 2025 · {template.score.toFixed(2)}%</span></span>{activeTemplate === template.id && <b>Em uso</b>}</button>)}</div>
+          <p className="library-note"><strong>Estrutura-base única:</strong> todos os templates usam o mesmo contrato modular inspirado no iPrefeituras. As cidades medalhistas alteram apenas o comportamento visual de cada peça.</p>
         </>}
       </aside>
 
@@ -206,19 +233,21 @@ export default function Home() {
         <div className="canvas-toolbar"><span>Prévia com conteúdo real</span><strong>{sizes[device]} · 100%</strong></div>
         <div className="site-frame">
           <div className="site-browser"><i /><i /><i /><span>amargosa.ba.gov.br{portalPage === "obras" ? "/obras-e-urbanismo" : ""}</span></div>
-          <article className={`municipal-site header-${design.header} menu-${design.menu} hero-${design.hero} services-${design.services} footer-${design.footer} font-${design.font} width-${design.width} spacing-${design.spacing} radius-${design.radius}`} style={themeStyle}>
+          <article className={`municipal-site lego-portal utility-${design.utility} header-${design.header} menu-${design.menu} search-${design.search} hero-${design.hero} services-${design.services} news-${design.news} transparency-${design.transparency} footer-${design.footer} font-${design.font} width-${design.width} spacing-${design.spacing} radius-${design.radius}`} style={themeStyle}>
             <div className="citizen-bar"><a href="#portal-menu">Ir para o menu</a><a href="#portal-search">Ir para a busca</a><a href="#portal-footer">Ir para o rodapé</a><button>Acessibilidade</button></div>
             <header className="portal-header">
               <a className="city-brand" href="#" onClick={(event) => { event.preventDefault(); setPortalPage("home"); }}><span>AM</span><div><strong>AMARGOSA</strong><small>PREFEITURA</small></div></a>
               <div className="portal-utilities"><div><a href="#">▣ Portal da Transparência</a><a href="#">? Ouvidoria Geral</a></div><form id="portal-search"><label className="sr-only" htmlFor="search">Pesquisa no site</label><input id="search" placeholder="Pesquisa no site" /><button>Buscar</button></form></div>
             </header>
             <nav className="audience-nav" id="portal-menu"><a href="#">CIDADÃO</a><a href="#">TURISTA</a><a href="#">SERVIDOR</a><a href="#">EMPRESAS</a><span>●　◉　●　◉</span></nav>
-            {portalPage === "home" ? <><section className="portal-hero selected-block" onClick={() => setRightTab("properties")}>
-              <span className="block-label">Destaque principal · selecionado</span>
-              <div className="recife-news"><div className="news-photo" role="img" aria-label="Praça central de Amargosa"><span>CIDADE JARDIM</span><button className="carousel-arrow previous" aria-label="Destaque anterior">‹</button><button className="carousel-arrow next" aria-label="Próximo destaque">›</button></div><div className="hero-copy"><small>GESTÃO MUNICIPAL</small><h1>{heroTitle}</h1><p>{heroDescription}</p></div></div>
-              <aside className="recife-services"><h2>ACESSO AOS SERVIÇOS</h2><div className="audience-tabs"><button className="active">Cidadão</button><button>Empresa</button><button>Turista</button><button>Servidor</button></div><div className="recife-service-grid">{recifeServiceAccess.map(([icon, title]) => <a href="#" key={title}><strong>{icon}</strong><span>{title}</span></a>)}</div><div className="slider-dots"><i /><i /></div></aside>
+            <section className="portal-search-module" aria-label="Busca principal"><div><small>SERVIÇOS E INFORMAÇÕES</small><strong>O que você procura?</strong><form><label className="sr-only" htmlFor="module-search">Buscar no portal</label><input id="module-search" placeholder="Digite um serviço, documento ou assunto" /><button>Buscar</button></form><nav aria-label="Buscas populares"><span>Mais buscados:</span><a href="#">IPTU</a><a href="#">Saúde</a><a href="#">Nota fiscal</a></nav></div></section>
+            {portalPage === "home" ? <><section className="portal-hero module-slot selected-block" onClick={() => setRightTab("properties")}>
+              <span className="block-label">Módulo de destaque · selecionado</span>
+              <div className="hero-main"><div className="hero-media" role="img" aria-label="Praça central de Amargosa"><span>CIDADE JARDIM</span><button className="carousel-arrow previous" aria-label="Destaque anterior">‹</button><button className="carousel-arrow next" aria-label="Próximo destaque">›</button></div><div className="hero-copy"><small>GESTÃO MUNICIPAL</small><h1>{heroTitle}</h1><p>{heroDescription}</p><div className="hero-meta"><span>Atendimento digital</span><span>Informação atualizada</span></div><button className="hero-cta">Saiba mais →</button></div></div>
+              <aside className="hero-actions"><h2>ACESSO AOS SERVIÇOS</h2><div className="audience-tabs"><button className="active">Cidadão</button><button>Empresa</button><button>Turista</button><button>Servidor</button></div><div className="hero-action-grid">{recifeServiceAccess.map(([icon, title]) => <a href="#" key={title}><strong>{icon}</strong><span>{title}</span></a>)}</div><div className="slider-dots"><i /><i /></div></aside>
             </section>
-            <section className="services"><div className="site-section-title"><div><small>ACESSO RÁPIDO</small><h2>Serviços mais procurados</h2></div><a href="#">Ver todos →</a></div><div className="service-grid">{serviceCards.map(([code, title, description]) => <a href="#" className="service-card" key={title} onClick={(event) => { event.preventDefault(); if (title === "Obras") { setPortalPage("obras"); setRightTab("properties"); } }}><span>{code}</span><div><strong>{title}</strong><small>{description}</small></div><b>→</b></a>)}</div></section></> : <section className="works-page">
+            <section className="services module-slot"><div className="module-inner"><div className="site-section-title"><div><small>ACESSO RÁPIDO</small><h2>Serviços mais procurados</h2></div><a href="#">Ver todos →</a></div><div className="service-grid">{serviceCards.map(([code, title, description]) => <a href="#" className="service-card" key={title} onClick={(event) => { event.preventDefault(); if (title === "Obras") { setPortalPage("obras"); setRightTab("properties"); } }}><span>{code}</span><div><strong>{title}</strong><small>{description}</small></div><b>→</b></a>)}</div></div></section>
+            <section className="portal-news module-slot"><div className="module-inner"><div className="site-section-title"><div><small>INFORMAÇÃO PÚBLICA</small><h2>Notícias e agenda</h2></div><a href="#">Todas as notícias →</a></div><div className="story-row" aria-hidden="true">{["Saúde", "Educação", "Cultura", "Obras", "Turismo"].map((item) => <span key={item}><i>{item.slice(0, 2)}</i><small>{item}</small></span>)}</div><div className="news-grid">{newsCards.map(([tag, title, description], index) => <article key={title}><div className={`news-image news-image-${index + 1}`} /><div><small>{tag}</small><h3>{title}</h3><p>{description}</p><a href="#">Ler notícia →</a></div></article>)}</div></div></section></> : <section className="works-page">
               <nav className="portal-breadcrumb" aria-label="Navegação estrutural"><button onClick={() => setPortalPage("home")}>Início</button><span>›</span><a href="#">Secretarias</a><span>›</span><strong>Obras e Urbanismo</strong></nav>
               <header className="works-hero selected-block" onClick={() => setRightTab("properties")}><span className="block-label">Título e metadados · selecionado</span><div><small>SECRETARIA MUNICIPAL</small><h1>Obras e Urbanismo</h1><p>Serviços de manutenção urbana, infraestrutura, iluminação pública e acompanhamento das obras municipais.</p></div><strong className="works-monogram">OB</strong></header>
               <div className="works-content">
@@ -228,6 +257,7 @@ export default function Home() {
               <footer className="page-metadata"><span><small>Responsável</small>Secretaria de Infraestrutura</span><span><small>Fonte</small>Prefeitura de Amargosa</span><span><small>Última atualização</small>18 de agosto de 2026</span></footer>
             </section>}
             <section className="essential-strip" id="portal-footer"><div><small>ACESSOS PROTEGIDOS</small><strong>Transparência e participação</strong></div>{essentialLinks.slice(0, 4).map((item) => <a key={item} href="#">{item}<span>↗</span></a>)}</section>
+            <footer className="portal-footer"><a className="city-brand" href="#"><span>AM</span><div><strong>AMARGOSA</strong><small>PREFEITURA</small></div></a><div><strong>Prefeitura Municipal de Amargosa</strong><span>Praça Lourival Monte, Centro · Bahia</span><span>Atendimento de segunda a sexta</span></div><nav><a href="#">Mapa do site</a><a href="#">Acessibilidade</a><a href="#">Política de privacidade</a></nav></footer>
           </article>
         </div>
       </section>
@@ -239,9 +269,20 @@ export default function Home() {
         </div>
         {rightTab === "properties" ? <section className="properties">
           <div className="selection-title"><span>Editor visual</span><em>Design</em></div>
-          <div className="content-lock"><i>◆</i><span><strong>Conteúdo protegido</strong><small>Textos, menus internos e abas são gerenciados fora do construtor. Aqui você altera somente design e estrutura visual.</small></span></div>
+          <div className="content-lock"><i>◆</i><span><strong>Contrato modular ativo</strong><small>Todas as peças usam a mesma largura, espaçamento e conteúdo-base. O template altera somente a apresentação; menus e conteúdos internos permanecem protegidos.</small></span></div>
+          <button className="base-model-button" onClick={() => { applyDesign(defaultDesign, "Modelo modular padrão"); notify("Modelo modular padrão aplicado."); }}>Aplicar modelo padrão · iPrefeituras <span>↺</span></button>
           <fieldset className="design-group"><legend>Identidade</legend><div className="color-grid"><label>Principal<div><input type="color" value={design.primary} onChange={(event) => applyDesign({ ...design, primary: event.target.value }, "Cor principal")} /><span>{design.primary}</span></div></label><label>Secundária<div><input type="color" value={design.secondary} onChange={(event) => applyDesign({ ...design, secondary: event.target.value }, "Cor secundária")} /><span>{design.secondary}</span></div></label><label>Destaque<div><input type="color" value={design.accent} onChange={(event) => applyDesign({ ...design, accent: event.target.value }, "Cor de destaque")} /><span>{design.accent}</span></div></label><label>Superfície<div><input type="color" value={design.surface} onChange={(event) => applyDesign({ ...design, surface: event.target.value }, "Cor de superfície")} /><span>{design.surface}</span></div></label></div><label>Família tipográfica<select value={design.font} onChange={(event) => applyDesign({ ...design, font: event.target.value as FontStyle }, "Tipografia")}><option value="inter">Inter — neutra e digital</option><option value="source">Source Sans — institucional</option><option value="montserrat">Montserrat — geométrica</option><option value="merriweather">Merriweather — editorial</option></select></label></fieldset>
-          <fieldset className="design-group"><legend>Mistura de componentes</legend><label>Cabeçalho<select value={design.header} onChange={(event) => applyDesign({ ...design, header: event.target.value as HeaderStyle }, "Cabeçalho")}><option value="recife">Utilitário — inspirado em Recife</option><option value="belem">Cívico — inspirado em Belém</option><option value="salvador">Em camadas — inspirado em Salvador</option><option value="essential">Essencial — compacto</option></select></label><label>Menu principal<select value={design.menu} onChange={(event) => applyDesign({ ...design, menu: event.target.value as MenuStyle }, "Menu principal")}><option value="recife">Por públicos — Recife</option><option value="belem">Gaveta cívica — Belém</option><option value="salvador">Faixa institucional — Salvador</option><option value="minimal">Horizontal mínimo</option></select></label><label>Destaque da página inicial<select value={design.hero} onChange={(event) => applyDesign({ ...design, hero: event.target.value as HeroStyle }, "Destaque")}><option value="recife">Notícia + serviços — Recife</option><option value="belem">Editorial amplo — Belém</option><option value="salvador">Carrossel de impacto — Salvador</option><option value="search">Busca em primeiro plano</option></select></label><label>Serviços prioritários<select value={design.services} onChange={(event) => applyDesign({ ...design, services: event.target.value as ServicesStyle }, "Serviços prioritários")}><option value="icons">Ícones em grade</option><option value="cards">Cards descritivos</option><option value="list">Lista compacta</option></select></label><label>Rodapé<select value={design.footer} onChange={(event) => applyDesign({ ...design, footer: event.target.value as FooterStyle }, "Rodapé")}><option value="institutional">Institucional</option><option value="compact">Compacto</option><option value="portal">Portal de acessos</option></select></label></fieldset>
+          <fieldset className="design-group"><legend>Segmentos padronizados</legend>
+            <label>Barra de acessibilidade<select value={design.utility} onChange={(event) => applyDesign({ ...design, utility: event.target.value as UtilityStyle }, "Barra de acessibilidade")}><option value="generic">Padrão modular — iPrefeituras</option><option value="recife">Clara com atalhos — Recife</option><option value="belem">Escura e objetiva — Belém</option><option value="aracaju">Faixa de destaque — Aracaju</option><option value="beloHorizonte">Azul com faixa cívica — Belo Horizonte</option></select></label>
+            <label>Cabeçalho<select value={design.header} onChange={(event) => applyDesign({ ...design, header: event.target.value as HeaderStyle }, "Cabeçalho")}><option value="generic">Padrão modular — iPrefeituras</option><option value="recife">Utilitário — Recife</option><option value="belem">Cívico — Belém</option><option value="salvador">Em camadas — Salvador</option><option value="campoGrande">Sobreposto — Campo Grande</option><option value="aracaju">Institucional claro — Aracaju</option><option value="uberlandia">Marca e públicos — Uberlândia</option><option value="beloHorizonte">Serviços e atendimento — Belo Horizonte</option><option value="curitiba">Enxuto — Curitiba</option><option value="essential">Essencial — compacto</option></select></label>
+            <label>Menu principal<select value={design.menu} onChange={(event) => applyDesign({ ...design, menu: event.target.value as MenuStyle }, "Menu principal")}><option value="generic">Padrão modular — iPrefeituras</option><option value="recife">Por públicos — Recife</option><option value="belem">Gaveta cívica — Belém</option><option value="salvador">Faixa institucional — Salvador</option><option value="campoGrande">Horizontal sobreposto — Campo Grande</option><option value="aracaju">Navegação limpa — Aracaju</option><option value="uberlandia">Públicos e temas — Uberlândia</option><option value="beloHorizonte">Serviços municipais — Belo Horizonte</option><option value="curitiba">Categorias concisas — Curitiba</option><option value="minimal">Horizontal mínimo</option></select></label>
+            <label>Busca<select value={design.search} onChange={(event) => applyDesign({ ...design, search: event.target.value as SearchStyle }, "Busca")}><option value="generic">Padrão no cabeçalho — iPrefeituras</option><option value="header">Compacta no cabeçalho — Recife</option><option value="campoGrande">Central monumental — Campo Grande</option><option value="uberlandia">Sobre imagem — Uberlândia</option><option value="curitiba">Busca + termos populares — Curitiba</option></select></label>
+            <label>Carrossel / destaque<select value={design.hero} onChange={(event) => applyDesign({ ...design, hero: event.target.value as HeroStyle }, "Destaque")}><option value="generic">Padrão modular — iPrefeituras</option><option value="recife">Compacto + serviços — Recife</option><option value="belem">Editorial amplo — Belém</option><option value="salvador">Tela cheia informativa — Salvador</option><option value="aracaju">Campanha institucional — Aracaju</option><option value="beloHorizonte">Controlado com indicadores — Belo Horizonte</option><option value="search">Destaque curto para busca</option></select></label>
+            <label>Serviços prioritários<select value={design.services} onChange={(event) => applyDesign({ ...design, services: event.target.value as ServicesStyle }, "Serviços prioritários")}><option value="generic">Padrão modular — iPrefeituras</option><option value="icons">Ícones em grade — Recife</option><option value="cards">Cards descritivos — Belém</option><option value="list">Lista compacta</option><option value="campoGrande">Faixa por públicos — Campo Grande</option><option value="uberlandia">Tópicos circulares — Uberlândia</option><option value="beloHorizonte">Acessos rápidos — Belo Horizonte</option></select></label>
+            <label>Notícias e agenda<select value={design.news} onChange={(event) => applyDesign({ ...design, news: event.target.value as NewsStyle }, "Notícias e agenda")}><option value="generic">Padrão modular — iPrefeituras</option><option value="grid">Grade editorial</option><option value="list">Lista de manchetes</option><option value="aracaju">Faixa editorial — Aracaju</option><option value="curitiba">Histórias + cards — Curitiba</option></select></label>
+            <label>Transparência<select value={design.transparency} onChange={(event) => applyDesign({ ...design, transparency: event.target.value as TransparencyStyle }, "Transparência")}><option value="generic">Padrão modular — iPrefeituras</option><option value="strip">Faixa de acessos</option><option value="cards">Cards protegidos</option><option value="compact">Linha compacta</option></select></label>
+            <label>Rodapé<select value={design.footer} onChange={(event) => applyDesign({ ...design, footer: event.target.value as FooterStyle }, "Rodapé")}><option value="generic">Padrão modular — iPrefeituras</option><option value="institutional">Institucional</option><option value="compact">Compacto — Belém</option><option value="portal">Portal de acessos — Recife</option><option value="beloHorizonte">Colunas cívicas — Belo Horizonte</option><option value="curitiba">Rodapé enxuto — Curitiba</option></select></label>
+          </fieldset>
           <fieldset className="design-group"><legend>Disposição</legend><div className="field-row"><label>Largura<select value={design.width} onChange={(event) => applyDesign({ ...design, width: event.target.value as DesignConfig["width"] }, "Largura")}><option value="wide">Ampla</option><option value="contained">Contida</option></select></label><label>Espaçamento<select value={design.spacing} onChange={(event) => applyDesign({ ...design, spacing: event.target.value as DesignConfig["spacing"] }, "Espaçamento")}><option value="compact">Compacto</option><option value="comfortable">Confortável</option><option value="airy">Arejado</option></select></label></div><label>Forma dos componentes<select value={design.radius} onChange={(event) => applyDesign({ ...design, radius: event.target.value as DesignConfig["radius"] }, "Forma dos componentes")}><option value="square">Cantos retos</option><option value="soft">Cantos suaves</option><option value="round">Cantos arredondados</option></select></label></fieldset>
           <div className="score-guard"><div><small>PROJEÇÃO DESTA COMPOSIÇÃO</small><strong>{pntpScore.toFixed(1)}%</strong></div><span className={pntpScore >= 80 ? "safe" : "attention"}>Mínimo 75%</span><p>Mudanças que projetem resultado inferior a 75% são rejeitadas antes de alterar o rascunho.</p></div>
         </section> : <section className="pntp-panel">
