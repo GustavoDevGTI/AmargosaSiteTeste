@@ -16,13 +16,14 @@ demonstrativos de conformidade.
 - contrato modular único inspirado na estrutura genérica do iPrefeituras;
 - encaixes compartilhados de largura, espaçamento e responsividade entre todos
   os segmentos;
-- edição de tipografia, cores, largura, espaçamento e cantos;
+- sete variações de design por segmento, inspiradas nas sete cidades de referência;
+- edição de tipografia, cores, imagens, largura, espaçamento e cantos;
 - mistura livre de segmentos de templates diferentes;
 - visualização em desktop, tablet e celular;
-- árvore de blocos protegidos, restritos e opcionais;
-- biblioteca de templates referenciada em portais com medalha PNTP 2025;
+- seleção direta dos nove segmentos na prévia;
+- biblioteca de modelos completos referenciada em portais com medalha PNTP 2025;
 - checklist PNTP lateral;
-- bloqueio preventivo de mudanças com estimativa técnica inferior a 75%;
+- bloqueio preventivo de mudanças com estimativa técnica inferior a 80%, incluindo contraste, disposição funcional e visibilidade direta dos acessos protegidos;
 - documentação funcional, técnica, de design, segurança e infraestrutura na
   pasta [`documentacao`](./documentacao).
 
