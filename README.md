@@ -1,9 +1,9 @@
 # Construtor visual — Portal de Amargosa
 
 Protótipo navegável de um construtor de portais municipais. O projeto inclui um
-site institucional de teste com a identidade visual de Amargosa, uma composição
-inspirada no portal da Prefeitura do Recife e controles demonstrativos de
-conformidade PNTP.
+site institucional de teste com a identidade visual de Amargosa, componentes
+inspirados exclusivamente em portais certificados pelo PNTP e controles
+demonstrativos de conformidade.
 
 > A estimativa PNTP apresentada na interface é demonstrativa e não representa
 > certificação oficial.
@@ -11,13 +11,19 @@ conformidade PNTP.
 ## O que está incluído
 
 - construtor visual com canvas do site público;
-- edição de título e descrição em tempo real;
-- variantes, alinhamento e densidade do destaque;
+- troca independente de barra acessível, cabeçalho, menu, busca, carrossel,
+  serviços, notícias, transparência e rodapé;
+- contrato modular único inspirado na estrutura genérica do iPrefeituras;
+- encaixes compartilhados de largura, espaçamento e responsividade entre todos
+  os segmentos;
+- sete variações de design por segmento, inspiradas nas sete cidades de referência;
+- edição de tipografia, cores, imagens, largura, espaçamento e cantos;
+- mistura livre de segmentos de templates diferentes;
 - visualização em desktop, tablet e celular;
-- árvore de blocos protegidos, restritos e opcionais;
-- biblioteca homologada de componentes;
+- seleção direta dos nove segmentos na prévia;
+- biblioteca de modelos completos referenciada em portais com medalha PNTP 2025;
 - checklist PNTP lateral;
-- simulação de validação e bloqueio de publicação;
+- bloqueio preventivo de mudanças com estimativa técnica inferior a 80%, incluindo contraste, disposição funcional e visibilidade direta dos acessos protegidos;
 - documentação funcional, técnica, de design, segurança e infraestrutura na
   pasta [`documentacao`](./documentacao).
 
@@ -76,16 +82,41 @@ pressione `Ctrl + C`.
 
 Na interface é possível:
 
-1. editar o título e a descrição na lateral direita;
-2. alternar a variante e o alinhamento do destaque;
-3. trocar entre desktop, tablet e celular na barra superior;
-4. abrir a biblioteca de blocos na lateral esquerda;
-5. executar a validação PNTP demonstrativa;
-6. tentar publicar para visualizar a simulação de bloqueio por critério
-   essencial.
+1. escolher um template medalhista na lateral esquerda;
+2. misturar segmentos visuais de cidades diferentes na lateral direita;
+3. alterar cores, fonte, largura, espaçamento e forma dos componentes;
+4. trocar entre desktop, tablet e celular na barra superior;
+5. abrir a página de Obras pelo card correspondente;
+6. executar a validação PNTP demonstrativa.
 
 As mudanças realizadas no navegador são apenas demonstrativas e não são
 gravadas em banco de dados nesta versão do protótipo.
+
+## Referências certificadas do catálogo
+
+As notas abaixo vêm da base oficial do PNTP 2025, no recorte Executivo
+Municipal. A identidade, os textos e as imagens do protótipo continuam sendo de
+Amargosa; os portais servem apenas como referência estrutural e visual.
+
+O modelo genérico do construtor usa como referência de arquitetura o
+[demonstrador do iPrefeituras](https://demo.iprefeituras.com.br/). Ele define a
+sequência e os pontos de encaixe; não é apresentado como template certificado.
+Cada template municipal aplica suas características sobre essa mesma estrutura,
+sem trocar o conteúdo ou criar marcações incompatíveis.
+
+| Referência | Medalha | Índice PNTP 2025 |
+| --- | --- | ---: |
+| Campo Grande/MS | Diamante | 100,00% |
+| Aracaju/SE | Diamante | 97,49% |
+| Uberlândia/MG | Diamante | 97,10% |
+| Belo Horizonte/MG | Diamante | 95,00% |
+| Curitiba/PR | Ouro | 94,16% |
+| Recife/PE | Ouro | 92,90% |
+| Salvador/BA | Prata | 77,46% |
+| Belém/PA | Prata | 76,91% |
+
+Fonte: [Radar Nacional da Transparência Pública](https://radardatransparencia.atricon.org.br/),
+base de dados de 2025 atualizada em 10/02/2026.
 
 ## Compartilhar na rede local
 

@@ -1,272 +1,216 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from "react";
 
 type Device = "desktop" | "tablet" | "mobile";
-type PortalPage = "home" | "obras";
-type HeaderStyle = "recife" | "belem" | "salvador" | "essential";
-type MenuStyle = "recife" | "belem" | "salvador" | "minimal";
-type HeroStyle = "recife" | "belem" | "salvador" | "search";
-type ServicesStyle = "icons" | "cards" | "list";
-type FooterStyle = "institutional" | "compact" | "portal";
-type FontStyle = "inter" | "source" | "montserrat" | "merriweather";
-
+type ArchetypeId = "editorial" | "impact" | "services" | "campaigns" | "discovery" | "directory" | "controlled";
+type SectionId = "utility" | "header" | "menu" | "search" | "hero" | "services" | "news" | "transparency" | "footer";
+type ItemFormat = "default" | "rounded" | "pill" | "outlined" | "filled" | "shadow";
+type ItemFont = "inherit" | "inter" | "source" | "montserrat" | "merriweather";
+type ItemStyle = { icon?: string; font?: ItemFont; color?: string; format?: ItemFormat };
+type SegmentItem = { id: string; name: string; icon: string };
 type DesignConfig = {
-  header: HeaderStyle;
-  menu: MenuStyle;
-  hero: HeroStyle;
-  services: ServicesStyle;
-  footer: FooterStyle;
-  font: FontStyle;
-  primary: string;
-  secondary: string;
-  accent: string;
-  surface: string;
+  archetype: ArchetypeId;
+  utility: string;
+  header: string;
+  menu: string;
+  search: string;
+  hero: string;
+  services: string;
+  news: string;
+  transparency: string;
+  footer: string;
+  font: "inter" | "source" | "montserrat" | "merriweather";
+  primary: string; secondary: string; accent: string; surface: string;
   width: "wide" | "contained";
   spacing: "compact" | "comfortable" | "airy";
   radius: "square" | "soft" | "round";
 };
+type Archetype = { id: ArchetypeId; name: string; icon: string; description: string; emphasis: string; config: Partial<DesignConfig> };
+type Recipe = { id: string; name: string; city: string; medal: "Diamante" | "Ouro" | "Prata"; score: number; archetype: ArchetypeId; description: string; config: Partial<DesignConfig> };
 
-const serviceCards = [
-  ["SA", "Saúde", "Agendamentos e unidades"],
-  ["ED", "Educação", "Matrícula e calendário"],
-  ["TR", "Tributos", "IPTU, taxas e certidões"],
-  ["OB", "Obras", "Licenças e solicitações"],
+const brand = { primary: "#157c62", secondary: "#51b89e", accent: "#cf304c", surface: "#fffaf8" };
+const archetypes: Archetype[] = [
+  { id:"editorial", name:"Editorial de Serviços", icon:"ED", description:"Tipografia editorial, ritmo compacto e cantos discretos.", emphasis:"Linguagem: Recife", config:{ archetype:"editorial", font:"merriweather", width:"wide", spacing:"comfortable", radius:"square" } },
+  { id:"impact", name:"Comunicação de Impacto", icon:"IM", description:"Escala ampla, respiro generoso e geometria marcante.", emphasis:"Linguagem: Salvador", config:{ archetype:"impact", font:"montserrat", width:"wide", spacing:"airy", radius:"square" } },
+  { id:"services", name:"Central de Serviços", icon:"SV", description:"Leitura funcional, largura contida e componentes amigáveis.", emphasis:"Linguagem: Campo Grande", config:{ archetype:"services", font:"source", width:"contained", spacing:"comfortable", radius:"soft" } },
+  { id:"campaigns", name:"Portal de Campanhas", icon:"CP", description:"Títulos fortes, blocos definidos e ritmo promocional.", emphasis:"Linguagem: Aracaju", config:{ archetype:"campaigns", font:"montserrat", width:"contained", spacing:"comfortable", radius:"square" } },
+  { id:"discovery", name:"Busca e Descoberta", icon:"BD", description:"Interface leve, espaçada e com formas acolhedoras.", emphasis:"Linguagem: Curitiba", config:{ archetype:"discovery", font:"source", width:"wide", spacing:"airy", radius:"round" } },
+  { id:"directory", name:"Diretório Institucional", icon:"DI", description:"Alta densidade, hierarquia direta e cantos retos.", emphasis:"Linguagem: Belém", config:{ archetype:"directory", font:"source", width:"contained", spacing:"compact", radius:"square" } },
+  { id:"controlled", name:"Portal Controlado", icon:"PC", description:"Ritmo equilibrado e controles institucionais consistentes.", emphasis:"Linguagem: Belo Horizonte", config:{ archetype:"controlled", font:"inter", width:"contained", spacing:"comfortable", radius:"soft" } },
 ];
-
-const recifeServiceAccess = [
-  ["R$", "Tributos"], ["✎", "Licitações"], ["♻", "Meio ambiente"], ["↔", "Planejamento"],
-  ["✚", "Saúde"], ["⌂", "Assistência social"], ["▥", "Habitação"], ["◇", "Segurança"],
+const defaultDesign: DesignConfig = { archetype:"editorial", utility:"minimal", header:"institutional", menu:"categories", search:"header", hero:"editorial-compact", services:"icon-grid", news:"lead-grid", transparency:"protected-strip", footer:"institutional", font:"inter", ...brand, width:"wide", spacing:"comfortable", radius:"soft" };
+const recipes: Recipe[] = [
+  { id:"recife", name:"Editorial ágil", city:"Recife · PE", medal:"Ouro", score:92.9, archetype:"editorial", description:"Destaque compacto, mensagens rápidas e serviços próximos.", config:{ utility:"minimal", header:"service", menu:"audience", search:"header", hero:"editorial-compact", services:"icon-grid", news:"lead-grid", transparency:"protected-strip", footer:"directory", radius:"square" } },
+  { id:"salvador", name:"Comunicação de impacto", city:"Salvador · BA", medal:"Prata", score:77.46, archetype:"impact", description:"Fotografia imersiva, informação completa e campanhas fortes.", config:{ utility:"contrast", header:"overlay", menu:"horizontal", search:"overlay", hero:"immersive", services:"descriptive-cards", news:"lead-grid", transparency:"official-cards", footer:"institutional", radius:"square" } },
+  { id:"campo-grande", name:"Serviços por público", city:"Campo Grande · MS", medal:"Diamante", score:100, archetype:"services", description:"Busca central e tarefas organizadas para diferentes públicos.", config:{ utility:"minimal", header:"compact", menu:"audience", search:"prominent", hero:"campaign", services:"audience-groups", news:"feed", transparency:"official-cards", footer:"directory" } },
+  { id:"curitiba", name:"Busca e descobertas", city:"Curitiba · PR", medal:"Ouro", score:94.16, archetype:"discovery", description:"Termos populares, histórias e atualizações rápidas.", config:{ utility:"minimal", header:"compact", menu:"categories", search:"popular", hero:"vertical", services:"icon-grid", news:"stories", transparency:"protected-strip", footer:"compact", radius:"round" } },
+  { id:"belo-horizonte", name:"Portal controlado", city:"Belo Horizonte · MG", medal:"Diamante", score:95, archetype:"controlled", description:"Carrossel com controles evidentes e acessos oficiais em cards.", config:{ utility:"highlight", header:"controlled", menu:"categories", search:"header", hero:"controlled", services:"descriptive-cards", news:"headlines", transparency:"official-cards", footer:"directory" } },
+  { id:"belem", name:"Diretório cívico", city:"Belém · PA", medal:"Prata", score:76.91, archetype:"directory", description:"Navegação recolhida, acessos públicos e informações institucionais.", config:{ utility:"contrast", header:"institutional", menu:"drawer", search:"popular", hero:"campaign", services:"compact-list", news:"headlines", transparency:"directory", footer:"directory" } },
+  { id:"aracaju", name:"Campanhas e manchetes", city:"Aracaju · SE", medal:"Diamante", score:97.49, archetype:"campaigns", description:"Campanhas horizontais e notícias organizadas por manchetes.", config:{ utility:"highlight", header:"institutional", menu:"horizontal", search:"header", hero:"campaign", services:"descriptive-cards", news:"headlines", transparency:"protected-strip", footer:"institutional", width:"contained" } },
 ];
-
-const essentialLinks = ["Transparência", "e-SIC", "Ouvidoria", "Diário Oficial", "Carta de Serviços"];
-const heroTitle = "Serviços públicos de um jeito simples.";
-const heroDescription = "Encontre informações, solicite atendimentos e acompanhe a Prefeitura em um só lugar.";
-
-const layers = [
-  ["Cabeçalho", "protected"],
-  ["Destaque principal", "selected"],
-  ["Busca de serviços", "protected"],
-  ["Serviços prioritários", "restricted"],
-  ["Acessos essenciais", "protected"],
-  ["Notícias e agenda", "optional"],
-  ["Rodapé", "protected"],
+const structure: Array<{id:SectionId;name:string;selector:string;description:string}> = [
+  {id:"utility",name:"Acessibilidade",selector:".accessibility-bar",description:"Atalhos de navegação, contraste e recursos de acessibilidade."},
+  {id:"header",name:"Cabeçalho institucional",selector:".portal-header",description:"Identidade municipal e acessos públicos sempre visíveis."},
+  {id:"menu",name:"Menu principal",selector:".portal-menu",description:"Navegação principal sem esconder os canais obrigatórios."},
+  {id:"search",name:"Busca do portal",selector:".search-module",description:"Busca direta, visível e independente do menu."},
+  {id:"hero",name:"Destaque / carrossel",selector:".hero-module",description:"Área editorial ou de campanha no início da página."},
+  {id:"services",name:"Serviços ao cidadão",selector:".services-module",description:"Atalhos para os serviços mais utilizados."},
+  {id:"news",name:"Notícias e agenda",selector:".news-module",description:"Comunicação pública e atualizações do município."},
+  {id:"transparency",name:"Transparência",selector:".transparency-module",description:"Os acessos de transparência continuam disponíveis diretamente na página."},
+  {id:"footer",name:"Rodapé e contato",selector:".portal-footer",description:"Contato, identidade e acessos institucionais finais."},
 ];
-
-const worksLayers = [
-  ["Cabeçalho", "protected"],
-  ["Breadcrumb", "protected"],
-  ["Título e metadados", "protected"],
-  ["Serviços de Obras", "restricted"],
-  ["Obras em andamento", "restricted"],
-  ["Contato da Secretaria", "protected"],
-  ["Rodapé", "protected"],
-];
-
-const defaultDesign: DesignConfig = {
-  header: "recife",
-  menu: "belem",
-  hero: "salvador",
-  services: "icons",
-  footer: "institutional",
-  font: "inter",
-  primary: "#157c62",
-  secondary: "#51b89e",
-  accent: "#cf304c",
-  surface: "#fff8f6",
-  width: "wide",
-  spacing: "comfortable",
-  radius: "soft",
+const segmentOptions: Record<SectionId,{label:string;note:string;options:string[][]}> = {
+  utility:{label:"Barra de acessibilidade",note:"Escolha uma das sete apresentações disponíveis.",options:[["minimal","Recife · mínima editorial"],["highlight","Aracaju · faixa de campanha"],["contrast","Belo Horizonte · alto contraste"],["civic","Belém · faixa cívica"],["service","Campo Grande · acesso rápido"],["floating","Curitiba · controles flutuantes"],["impact","Salvador · contraste de impacto"]]},
+  header:{label:"Cabeçalho",note:"Logotipo e acessos institucionais permanecem no segmento.",options:[["institutional","Belém · institucional clássico"],["service","Recife · orientado a serviços"],["compact","Curitiba · compacto utilitário"],["overlay","Salvador · bloco de impacto"],["centered","Campo Grande · marca centralizada"],["campaign","Aracaju · cabeçalho de campanha"],["controlled","Belo Horizonte · institucional controlado"]]},
+  menu:{label:"Menu",note:"A navegação muda de forma sem alterar o conteúdo dos links.",options:[["horizontal","Recife · horizontal editorial"],["audience","Campo Grande · por públicos"],["categories","Belo Horizonte · categorias"],["drawer","Belém · menu recolhido"],["mega","Salvador · faixa ampla"],["pills","Curitiba · atalhos em cápsulas"],["campaign","Aracaju · navegação de campanha"]]},
+  search:{label:"Busca",note:"A busca continua disponível em todas as sete opções.",options:[["header","Recife · compacta institucional"],["prominent","Campo Grande · central proeminente"],["overlay","Salvador · sobre imagem"],["popular","Curitiba · termos populares"],["directory","Belém · busca de diretório"],["campaign","Aracaju · busca de campanha"],["controlled","Belo Horizonte · busca controlada"]]},
+  hero:{label:"Carrossel / destaque",note:"Sete formatos editoriais adaptados ao mesmo encaixe.",options:[["editorial-compact","Recife · editorial compacto"],["immersive","Salvador · imersivo informativo"],["campaign","Aracaju · campanha horizontal"],["controlled","Belo Horizonte · controlado"],["vertical","Curitiba · destaque vertical"],["service","Campo Grande · central de serviços"],["directory","Belém · diretório em destaque"]]},
+  services:{label:"Serviços",note:"Os mesmos serviços recebem sete organizações visuais.",options:[["icon-grid","Recife · grade editorial"],["descriptive-cards","Salvador · cards de impacto"],["audience-groups","Campo Grande · por público"],["compact-list","Belém · lista compacta"],["campaign","Aracaju · cards de campanha"],["discovery","Curitiba · descoberta por ícones"],["controlled","Belo Horizonte · grade controlada"]]},
+  news:{label:"Notícias e agenda",note:"A hierarquia muda sem editar o conteúdo publicado.",options:[["lead-grid","Recife · manchete e grade"],["feed","Campo Grande · feed cronológico"],["headlines","Aracaju · lista de manchetes"],["stories","Curitiba · histórias"],["impact","Salvador · notícia de impacto"],["directory","Belém · diretório informativo"],["controlled","Belo Horizonte · grade controlada"]]},
+  transparency:{label:"Transparência",note:"Todas as opções mantêm os acessos diretamente visíveis.",options:[["protected-strip","Recife · faixa editorial"],["official-cards","Belo Horizonte · cards oficiais"],["directory","Belém · diretório público"],["campaign","Aracaju · faixa de campanha"],["discovery","Curitiba · acessos em cápsulas"],["service","Campo Grande · central de acessos"],["impact","Salvador · painel de impacto"]]},
+  footer:{label:"Rodapé",note:"Contato e acessos institucionais permanecem em todas as opções.",options:[["institutional","Recife · institucional completo"],["directory","Belém · diretório em colunas"],["compact","Curitiba · contato compacto"],["impact","Salvador · rodapé de impacto"],["service","Campo Grande · central de contato"],["campaign","Aracaju · faixa de campanha"],["controlled","Belo Horizonte · rodapé controlado"]]},
 };
+const segmentItems: Record<SectionId,SegmentItem[]> = {
+  utility:[{id:"shortcuts",name:"Atalhos de navegação",icon:"↳"},{id:"font-size",name:"Tamanho da fonte",icon:"A+"},{id:"contrast",name:"Contraste",icon:"◐"},{id:"accessibility",name:"Acessibilidade",icon:"♿"}],
+  header:[{id:"brand",name:"Marca da Prefeitura",icon:"AM"},{id:"transparency",name:"Transparência",icon:"◫"},{id:"esic",name:"e-SIC",icon:"@"},{id:"ombudsman",name:"Ouvidoria",icon:"◇"},{id:"search",name:"Busca do cabeçalho",icon:"⌕"},{id:"cta",name:"Fale com a Prefeitura",icon:"→"},{id:"contact",name:"Contato",icon:"☎"}],
+  menu:[{id:"municipality",name:"O Município",icon:"⌂"},{id:"departments",name:"Secretarias",icon:"▦"},{id:"services",name:"Serviços",icon:"◆"},{id:"information",name:"Informativos",icon:"▤"},{id:"publications",name:"Publicações",icon:"▧"},{id:"transparency",name:"Transparência",icon:"◫"},{id:"citizen",name:"Cidadão",icon:"●"},{id:"company",name:"Empresa",icon:"●"},{id:"employee",name:"Servidor",icon:"●"},{id:"tourist",name:"Turista",icon:"●"}],
+  search:[{id:"copy",name:"Título da busca",icon:"⌕"},{id:"field",name:"Campo de pesquisa",icon:"⌨"},{id:"button",name:"Botão buscar",icon:"⌕"},{id:"popular-label",name:"Rótulo mais buscados",icon:"#"},{id:"iptu",name:"Termo IPTU",icon:"$"},{id:"health",name:"Termo Saúde",icon:"+"},{id:"invoice",name:"Termo Nota fiscal",icon:"▤"},{id:"gazette",name:"Termo Diário Oficial",icon:"▧"}],
+  hero:[{id:"media",name:"Imagem do destaque",icon:"▣"},{id:"category",name:"Categoria",icon:"●"},{id:"title",name:"Título principal",icon:"T"},{id:"description",name:"Descrição",icon:"¶"},{id:"action",name:"Botão de ação",icon:"→"},{id:"services",name:"Título dos serviços",icon:"▦"},{id:"citizen",name:"Aba Cidadão",icon:"●"},{id:"company",name:"Aba Empresa",icon:"●"},{id:"tourist",name:"Aba Turista",icon:"●"},{id:"employee",name:"Aba Servidor",icon:"●"},{id:"taxes",name:"Acesso Tributos",icon:"R$"},{id:"bids",name:"Acesso Licitações",icon:"✎"},{id:"environment",name:"Acesso Meio ambiente",icon:"♻"},{id:"planning",name:"Acesso Planejamento",icon:"↔"},{id:"health",name:"Acesso Saúde",icon:"✚"},{id:"assistance",name:"Acesso Assistência",icon:"⌂"},{id:"housing",name:"Acesso Habitação",icon:"▥"},{id:"security",name:"Acesso Segurança",icon:"◇"},{id:"controls",name:"Controles do carrossel",icon:"Ⅱ"}],
+  services:[{id:"health",name:"Saúde",icon:"SA"},{id:"education",name:"Educação",icon:"ED"},{id:"taxes",name:"Tributos",icon:"TR"},{id:"works",name:"Obras",icon:"OB"},{id:"assistance",name:"Assistência",icon:"AS"},{id:"companies",name:"Empresas",icon:"EM"}],
+  news:[{id:"health",name:"Atalho Saúde",icon:"SA"},{id:"education",name:"Atalho Educação",icon:"ED"},{id:"culture",name:"Atalho Cultura",icon:"CU"},{id:"works",name:"Atalho Obras",icon:"OB"},{id:"tourism",name:"Atalho Turismo",icon:"TU"},{id:"story-1",name:"Notícia principal",icon:"01"},{id:"story-2",name:"Segunda notícia",icon:"02"},{id:"story-3",name:"Terceira notícia",icon:"03"}],
+  transparency:[{id:"transparency",name:"Transparência",icon:"◫"},{id:"esic",name:"e-SIC",icon:"@"},{id:"ombudsman",name:"Ouvidoria",icon:"◇"},{id:"gazette",name:"Diário Oficial",icon:"▤"},{id:"services",name:"Carta de Serviços",icon:"▦"}],
+  footer:[{id:"brand",name:"Marca institucional",icon:"AM"},{id:"contact",name:"Atendimento",icon:"☎"},{id:"site-map",name:"Mapa do site",icon:"▤"},{id:"accessibility",name:"Acessibilidade",icon:"♿"},{id:"privacy",name:"Política de privacidade",icon:"◇"},{id:"bids",name:"Licitações",icon:"▧"},{id:"legislation",name:"Legislação",icon:"§"},{id:"departments",name:"Secretarias e órgãos",icon:"▦"}],
+};
+const MIN_COMPLIANCE_SCORE=80;
+const services = [["SA","Saúde","Agendamentos e unidades"],["ED","Educação","Matrícula e calendário"],["TR","Tributos","IPTU, taxas e certidões"],["OB","Obras","Manutenção e iluminação"],["AS","Assistência","Benefícios e atendimento"],["EM","Empresas","Alvarás e nota fiscal"]];
+const quickActions = [["R$","Tributos"],["✎","Licitações"],["♻","Meio ambiente"],["↔","Planejamento"],["✚","Saúde"],["⌂","Assistência"],["▥","Habitação"],["◇","Segurança"]];
+const quickActionIds = ["taxes","bids","environment","planning","health","assistance","housing","security"];
+const newsItems = [["GESTÃO","Prefeitura amplia atendimento digital ao cidadão","Novos serviços passam a reunir orientação e acompanhamento em uma experiência única."],["CIDADE","Praças recebem novas ações de cuidado urbano","Cronograma integra iluminação, jardinagem e acessibilidade."],["AGENDA","Feira municipal movimenta o centro neste fim de semana","Programação valoriza produtores, cultura e economia local."]];
+const storyShortcutIds = ["health","education","culture","works","tourism"];
+const protectedLinks = ["Transparência","e-SIC","Ouvidoria","Diário Oficial","Carta de Serviços"];
+const sizes: Record<Device,string> = { desktop:"1440 × 900", tablet:"768 × 1024", mobile:"390 × 844" };
+const desktopAuditOptions=Object.fromEntries((Object.keys(segmentOptions) as SectionId[]).map(key=>[key,segmentOptions[key].options.map(([value])=>value)])) as Record<SectionId,string[]>;
+const desktopAuditTotal=343;
 
-const templates: Array<{ id: string; name: string; reference: string; description: string; config: DesignConfig }> = [
-  { id: "amargosa", name: "Essencial Amargosa", reference: "Base municipal", description: "Busca, serviços e transparência em primeiro plano.", config: defaultDesign },
-  { id: "recife", name: "Serviços laterais", reference: "Inspirado em Recife", description: "Cabeçalho utilitário, públicos e grade lateral de serviços.", config: { ...defaultDesign, header: "recife", menu: "recife", hero: "recife", services: "icons", footer: "portal", radius: "square" } },
-  { id: "belem", name: "Menu cívico", reference: "Inspirado em Belém", description: "Acessibilidade forte, menu compacto e grande área editorial.", config: { ...defaultDesign, header: "belem", menu: "belem", hero: "belem", services: "cards", footer: "compact", spacing: "airy", radius: "soft" } },
-  { id: "salvador", name: "Impacto visual", reference: "Inspirado em Salvador", description: "Cabeçalho em camadas e carrossel fotográfico de alta presença.", config: { ...defaultDesign, header: "salvador", menu: "salvador", hero: "salvador", services: "cards", footer: "institutional", width: "wide", radius: "square" } },
-];
-
-function hexToRgb(hex: string) {
-  const clean = hex.replace("#", "");
-  const value = Number.parseInt(clean.length === 3 ? clean.split("").map((part) => part + part).join("") : clean, 16);
-  return { r: (value >> 16) & 255, g: (value >> 8) & 255, b: value & 255 };
+function hexToRgb(hex:string){const clean=hex.replace("#","");const value=Number.parseInt(clean.length===3?clean.split("").map(x=>x+x).join(""):clean,16);return{r:(value>>16)&255,g:(value>>8)&255,b:value&255}}
+function contrastRatio(foreground:string,background:string){const lum=(hex:string)=>{const{r,g,b}=hexToRgb(hex);const v=[r,g,b].map(c=>{const n=c/255;return n<=.03928?n/12.92:((n+.055)/1.055)**2.4});return .2126*v[0]+.7152*v[1]+.0722*v[2]};const a=lum(foreground),b=lum(background);return(Math.max(a,b)+.05)/(Math.min(a,b)+.05)}
+function structuralViolation(config:DesignConfig){
+  if(!segmentOptions.utility.options.some(([value])=>value===config.utility))return"A barra de acessibilidade não pode ser removida.";
+  if(!segmentOptions.header.options.some(([value])=>value===config.header))return"O cabeçalho institucional precisa permanecer visível.";
+  if(!segmentOptions.search.options.some(([value])=>value===config.search))return"A busca precisa permanecer visível e independente do menu.";
+  if(!segmentOptions.transparency.options.some(([value])=>value===config.transparency))return"A Transparência não pode ser ocultada nem colocada atrás de um menu.";
+  if(!segmentOptions.footer.options.some(([value])=>value===config.footer))return"Contato e acessos institucionais precisam permanecer disponíveis.";
+  return null;
 }
+function technicalScore(config:DesignConfig){let score=96;const violation=structuralViolation(config);if(violation)return 0;if(contrastRatio(config.primary,"#ffffff")<4.5)score-=24;if(contrastRatio(config.accent,"#ffffff")<3)score-=9;if(contrastRatio("#26342f",config.surface)<4.5)score-=20;if(config.hero==="immersive")score-=1.5;if(config.menu==="drawer")score-=2;if(config.search==="header")score-=.5;if(config.transparency==="directory")score-=.5;if(config.footer==="compact")score-=.5;if(config.spacing==="compact")score-=1;return Math.max(0,Math.round(score*10)/10)}
+function readableInk(background:string){return contrastRatio("#ffffff",background)>=contrastRatio("#20302a",background)?"#ffffff":"#20302a"}
 
-function contrastRatio(foreground: string, background: string) {
-  const luminance = (hex: string) => {
-    const { r, g, b } = hexToRgb(hex);
-    const values = [r, g, b].map((channel) => {
-      const normalized = channel / 255;
-      return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
-    });
-    return 0.2126 * values[0] + 0.7152 * values[1] + 0.0722 * values[2];
-  };
-  const first = luminance(foreground);
-  const second = luminance(background);
-  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
-}
-
-function technicalScore(config: DesignConfig) {
-  let score = 94.2;
-  if (contrastRatio(config.primary, "#ffffff") < 4.5) score -= 22;
-  if (contrastRatio(config.accent, "#ffffff") < 4.5) score -= 18;
-  if (contrastRatio("#293731", config.surface) < 4.5) score -= 20;
-  if (config.hero === "salvador") score -= 2.4;
-  if (config.menu === "belem") score -= 1.2;
-  if (config.spacing === "compact") score -= 1.8;
-  return Math.max(0, Math.round(score * 10) / 10);
-}
-
-const sizes: Record<Device, string> = { desktop: "1440 × 900", tablet: "768 × 1024", mobile: "390 × 844" };
-
-export default function Home() {
-  const [portalPage, setPortalPage] = useState<PortalPage>("home");
-  const [device, setDevice] = useState<Device>("desktop");
-  const [leftTab, setLeftTab] = useState<"structure" | "templates">("templates");
-  const [rightTab, setRightTab] = useState<"properties" | "pntp">("properties");
-  const [toast, setToast] = useState<string | null>(null);
-  const [publishOpen, setPublishOpen] = useState(false);
-  const [design, setDesign] = useState<DesignConfig>(defaultDesign);
-  const [activeTemplate, setActiveTemplate] = useState("amargosa");
-  const [blockedChange, setBlockedChange] = useState<{ label: string; score: number } | null>(null);
-  const pntpScore = technicalScore(design);
-
-  function notify(message: string) {
-    setToast(message);
-    window.setTimeout(() => setToast(null), 3200);
+export default function Home(){
+  const[device,setDevice]=useState<Device>("desktop");
+  const[portalPage,setPortalPage]=useState<"home"|"obras">("home");
+  const[leftTab,setLeftTab]=useState<"structure"|"recipes">("structure");
+  const[rightTab,setRightTab]=useState<"design"|"pntp">("design");
+  const[design,setDesign]=useState<DesignConfig>(defaultDesign);
+  const[activeRecipe,setActiveRecipe]=useState<string|null>(null);
+  const[selectedSection,setSelectedSection]=useState<SectionId|null>(null);
+  const[selectedItem,setSelectedItem]=useState<string|null>(null);
+  const[itemStyles,setItemStyles]=useState<Record<string,ItemStyle>>({});
+  const[segmentColors,setSegmentColors]=useState<Partial<Record<SectionId,string>>>({});
+  const[segmentImages,setSegmentImages]=useState<Partial<Record<SectionId,string>>>({});
+  const[toast,setToast]=useState<string|null>(null);
+  const[blocked,setBlocked]=useState<{label:string;score:number;reason?:string}|null>(null);
+  const[publishOpen,setPublishOpen]=useState(false);
+  const[audit,setAudit]=useState<{running:boolean;tested:number;bugs:number;examples:string[]}>({running:false,tested:0,bugs:0,examples:[]});
+  const portalRef=useRef<HTMLElement>(null);
+  const score=technicalScore(design);
+  const selectedStructure=structure.find(item=>item.id===selectedSection)??null;
+  const selectedItemDefinition=selectedSection?segmentItems[selectedSection].find(item=>item.id===selectedItem)??null:null;
+  const selectedItemKey=selectedSection&&selectedItem?`${selectedSection}.${selectedItem}`:null;
+  const activeStyle=archetypes.find(item=>Object.entries(item.config).every(([key,value])=>design[key as keyof DesignConfig]===value))??null;
+  const notify=(message:string)=>{setToast(message);window.setTimeout(()=>setToast(null),2800)};
+  function applyDesign(next:DesignConfig,label:string,scope:"segment"|"visual"="segment"){const projected=technicalScore(next),reason=structuralViolation(next);if(reason||projected<MIN_COMPLIANCE_SCORE){setBlocked({label,score:projected,reason});return}setDesign(next);if(scope==="segment")setActiveRecipe(null)}
+  function applyRecipe(recipe:Recipe){const archetype=archetypes.find(x=>x.id===recipe.archetype)!;const next={...defaultDesign,...archetype.config,...recipe.config,...brand} as DesignConfig;const projected=technicalScore(next);if(projected<MIN_COMPLIANCE_SCORE){setBlocked({label:`Receita ${recipe.name}`,score:projected,reason:structuralViolation(next)??undefined});return}setDesign(next);setActiveRecipe(recipe.id);setSelectedItem(null);setItemStyles({});notify(`${recipe.name} montou uma composição completa de segmentos.`)}
+  function selectSection(section:SectionId){const item=structure.find(entry=>entry.id===section)!;setSelectedSection(section);setSelectedItem(null);setPortalPage("home");setRightTab("design");window.setTimeout(()=>portalRef.current?.querySelector(item.selector)?.scrollIntoView({behavior:"smooth",block:"center"}),60)}
+  function selectItem(item:string){if(!selectedSection)return;setSelectedItem(item);window.setTimeout(()=>portalRef.current?.querySelector(`[data-builder-item="${selectedSection}.${item}"]`)?.scrollIntoView({behavior:"smooth",block:"center"}),60)}
+  function updateItemStyle(patch:Partial<ItemStyle>){if(!selectedItemKey)return;setItemStyles(current=>({...current,[selectedItemKey]:{...current[selectedItemKey],...patch}}))}
+  function resetSelectedItem(){if(!selectedItemKey)return;setItemStyles(current=>{const next={...current};delete next[selectedItemKey];return next});notify(`${selectedItemDefinition?.name??"Item"} restaurado.`)}
+  function itemAttrs(section:SectionId,item:string,baseClass=""){
+    const key=`${section}.${item}`,style=itemStyles[key]??{};
+    const fontStacks:Record<Exclude<ItemFont,"inherit">,string>={inter:"Inter, Arial, sans-serif",source:"'Source Sans 3', Arial, sans-serif",montserrat:"Montserrat, Arial, sans-serif",merriweather:"Merriweather, Georgia, serif"};
+    const className=[baseClass,"builder-editable-item",selectedItemKey===key?"builder-item-selected":"",style.color?"item-custom-color":"",style.font&&style.font!=="inherit"?"item-custom-font":"",style.format&&style.format!=="default"?`item-format-${style.format}`:""].filter(Boolean).join(" ");
+    const onClickCapture=(event:ReactMouseEvent<HTMLElement>)=>{if(selectedSection!==section)return;const closest=(event.target as HTMLElement).closest("[data-builder-item]");if(closest!==event.currentTarget)return;event.preventDefault();event.stopPropagation();selectItem(item)};
+    return{"data-builder-item":key,className,style:{...(style.color?{"--item-color":style.color}:{}),...(style.font&&style.font!=="inherit"?{"--item-font":fontStacks[style.font]}:{})} as CSSProperties,onClickCapture};
   }
-
-  function applyDesign(next: DesignConfig, label: string) {
-    const projectedScore = technicalScore(next);
-    if (projectedScore < 75) {
-      setBlockedChange({ label, score: projectedScore });
-      return;
-    }
-    setDesign(next);
-    setActiveTemplate("custom");
+  function itemIcon(section:SectionId,item:string,fallback:string){const icon=itemStyles[`${section}.${item}`]?.icon;return icon===undefined?fallback:icon}
+  function setSegmentImage(section:SectionId,file?:File){if(!file)return;if(!file.type.startsWith("image/")){notify("Selecione um arquivo de imagem.");return}if(file.size>5*1024*1024){notify("A imagem deve ter no máximo 5 MB.");return}const reader=new FileReader();reader.onload=()=>setSegmentImages(current=>({...current,[section]:String(reader.result)}));reader.readAsDataURL(file)}
+  function restoreEditor(){if(selectedSection){applyDesign({...design,[selectedSection]:defaultDesign[selectedSection]} as DesignConfig,`Restaurar ${selectedStructure?.name}`);setSegmentColors(current=>{const next={...current};delete next[selectedSection];return next});setSegmentImages(current=>{const next={...current};delete next[selectedSection];return next});setItemStyles(current=>Object.fromEntries(Object.entries(current).filter(([key])=>!key.startsWith(`${selectedSection}.`))));setSelectedItem(null);notify(`${selectedStructure?.name} restaurado.`);return}setDesign(defaultDesign);setActiveRecipe(null);setSegmentColors({});setSegmentImages({});setItemStyles({});setSelectedItem(null);notify("Modelo padrão restaurado.")}
+  function runDesktopAudit(){
+    const root=portalRef.current,workspace=root?.closest(".workspace") as HTMLElement|null,frame=root?.closest(".site-frame") as HTMLElement|null;
+    if(!root||!workspace||!frame)return;
+    if(!root.querySelector(".hero-module")){setPortalPage("home");window.setTimeout(runDesktopAudit,50);return}
+    const originalRootClass=root.className,originalWorkspaceClass=workspace.className,originalTransition=frame.style.transition;
+    workspace.className="workspace device-desktop";frame.style.transition="none";
+    const keys=Object.keys(desktopAuditOptions) as Array<keyof typeof desktopAuditOptions>;
+    const failures:string[]=[];let index=0;
+    setAudit({running:true,tested:0,bugs:0,examples:[]});
+    const batch=()=>{
+      const end=Math.min(index+240,desktopAuditTotal);
+      for(;index<end;index++){
+        const values:Record<string,string>={};
+        keys.forEach((key,dimension)=>{const options=desktopAuditOptions[key];values[key]=options[(index+dimension*Math.floor(index/7)+dimension*2)%options.length]});
+        root.className=["public-portal","archetype-editorial",`utility-${values.utility}`,`header-${values.header}`,`menu-${values.menu}`,`search-${values.search}`,`hero-${values.hero}`,`services-${values.services}`,`news-${values.news}`,`transparency-${values.transparency}`,`footer-${values.footer}`,"font-inter","width-wide","spacing-comfortable","radius-soft"].join(" ");
+        const selectors=[".accessibility-bar",".portal-header",".portal-menu",".search-module",".hero-module",".services-module",".news-module",".transparency-module",".portal-footer"];
+        const elements=selectors.map(selector=>root.querySelector(selector) as HTMLElement|null);
+        const boxes=elements.map(element=>element?.getBoundingClientRect());
+        const overlap=boxes.slice(1).some((box,position)=>box&&boxes[position]&&box.top<(boxes[position]?.bottom??0)-1);
+        const invalidHeight=boxes.some(box=>!box||box.height<=0);
+        const overflow=root.scrollWidth>root.clientWidth+2;
+        const protectedCount=[...root.querySelectorAll(".transparency-module a")].filter(element=>(element as HTMLElement).offsetWidth||(element as HTMLElement).offsetHeight).length;
+        if(overlap||invalidHeight||overflow||protectedCount!==5){failures.push(keys.map(key=>`${key}:${values[key]}`).join(" | ")+` => ${overlap?"sobreposição ":""}${invalidHeight?"altura ":""}${overflow?"overflow ":""}${protectedCount!==5?`protegidos:${protectedCount}`:""}`)}
+      }
+      setAudit({running:index<desktopAuditTotal,tested:index,bugs:failures.length,examples:failures.slice(0,5)});
+      if(index<desktopAuditTotal){window.setTimeout(batch,0)}else{root.className=originalRootClass;workspace.className=originalWorkspaceClass;frame.style.transition=originalTransition;notify(failures.length?`Teste concluído com ${failures.length} falhas.`:"As 343 combinações representativas passaram.")}
+    };
+    window.setTimeout(batch,0);
   }
-
-  function applyTemplate(template: (typeof templates)[number]) {
-    const projectedScore = technicalScore(template.config);
-    if (projectedScore < 75) {
-      setBlockedChange({ label: `Template ${template.name}`, score: projectedScore });
-      return;
-    }
-    setDesign(template.config);
-    setActiveTemplate(template.id);
-    notify(`${template.name} aplicado. Os módulos continuam combináveis.`);
-  }
-
-  const themeStyle = {
-    "--theme-primary": design.primary,
-    "--theme-secondary": design.secondary,
-    "--theme-accent": design.accent,
-    "--theme-surface": design.surface,
-  } as CSSProperties;
-
-  return (
-    <main className="builder-shell">
-      <header className="builder-topbar">
-        <div className="brand-lockup">
-          <span className="brand-mark">A</span>
-          <div><strong>{portalPage === "obras" ? "Obras" : "Início"}</strong><small>Portal de Amargosa · Rascunho</small></div>
-        </div>
-        <div className="draft-status"><span /> Estimativa PNTP <strong>{pntpScore.toFixed(1)}%</strong><b>mínimo 75%</b></div>
-        <div className="top-actions">
-          <button className="icon-button" aria-label="Desfazer" onClick={() => notify("Nada para desfazer nesta demonstração")}>↶</button>
-          <button className="icon-button" aria-label="Refazer" onClick={() => notify("Nada para refazer nesta demonstração")}>↷</button>
-          <div className="device-switch" aria-label="Dispositivo de pré-visualização">
-            {(["desktop", "tablet", "mobile"] as Device[]).map((item) => <button key={item} className={device === item ? "active" : ""} onClick={() => setDevice(item)}>{item === "desktop" ? "Desktop" : item === "tablet" ? "Tablet" : "Mobile"}</button>)}
-          </div>
-          <button className="button secondary" onClick={() => { setRightTab("pntp"); notify(`Validação concluída: ${pntpScore.toFixed(1)}%, acima do mínimo de 75%`); }}>Validar</button>
-          <button className="button primary" onClick={() => setPublishOpen(true)}>Publicar</button>
-        </div>
-      </header>
-
-      <aside className="left-panel">
-        <div className="panel-tabs">
-          <button className={leftTab === "structure" ? "active" : ""} onClick={() => setLeftTab("structure")}>Estrutura</button>
-          <button className={leftTab === "templates" ? "active" : ""} onClick={() => setLeftTab("templates")}>Templates</button>
-        </div>
-        {leftTab === "structure" ? <>
-          <div className="panel-heading"><span>{portalPage === "obras" ? "Obras e Urbanismo" : "Página inicial"}</span><button aria-label="Mais opções">•••</button></div>
-          <nav className="layer-tree" aria-label="Estrutura da página">
-            {(portalPage === "obras" ? worksLayers : layers).map(([label, kind]) => <button className={`layer ${kind}`} key={label} onClick={() => label === "Destaque principal" || label === "Título e metadados" ? setRightTab("properties") : notify(kind === "protected" ? `${label} é um bloco protegido` : `${label} selecionado`)}><span>≡</span><strong>{label}</strong>{kind === "protected" && <em>Protegido</em>}</button>)}
-          </nav>
-          <button className="add-block" onClick={() => setLeftTab("templates")}>▦ Trocar ponto de partida</button>
-          <div className="legend"><span><i className="dot protected-dot" /> Protegido</span><span><i className="dot restricted-dot" /> Restrito</span></div>
-        </> : <>
-          <div className="panel-heading"><span>Templates genéricos</span><button aria-label="Informações">i</button></div>
-          <div className="template-library">{templates.map((template) => <button className={activeTemplate === template.id ? "active" : ""} key={template.id} onClick={() => applyTemplate(template)}><span className={`template-thumb template-${template.id}`}><i /><i /><i /></span><span><small>{template.reference}</small><strong>{template.name}</strong><em>{template.description}</em></span>{activeTemplate === template.id && <b>Em uso</b>}</button>)}</div>
-          <p className="library-note">Os templates são pontos de partida. Cabeçalho, menu, destaque, serviços e rodapé podem ser misturados livremente.</p>
-        </>}
-      </aside>
-
-      <section className={`workspace preview-${device}`}>
-        <div className="canvas-toolbar"><span>Prévia com conteúdo real</span><strong>{sizes[device]} · 100%</strong></div>
-        <div className="site-frame">
-          <div className="site-browser"><i /><i /><i /><span>amargosa.ba.gov.br{portalPage === "obras" ? "/obras-e-urbanismo" : ""}</span></div>
-          <article className={`municipal-site header-${design.header} menu-${design.menu} hero-${design.hero} services-${design.services} footer-${design.footer} font-${design.font} width-${design.width} spacing-${design.spacing} radius-${design.radius}`} style={themeStyle}>
-            <div className="citizen-bar"><a href="#portal-menu">Ir para o menu</a><a href="#portal-search">Ir para a busca</a><a href="#portal-footer">Ir para o rodapé</a><button>Acessibilidade</button></div>
-            <header className="portal-header">
-              <a className="city-brand" href="#" onClick={(event) => { event.preventDefault(); setPortalPage("home"); }}><span>AM</span><div><strong>AMARGOSA</strong><small>PREFEITURA</small></div></a>
-              <div className="portal-utilities"><div><a href="#">▣ Portal da Transparência</a><a href="#">? Ouvidoria Geral</a></div><form id="portal-search"><label className="sr-only" htmlFor="search">Pesquisa no site</label><input id="search" placeholder="Pesquisa no site" /><button>Buscar</button></form></div>
-            </header>
-            <nav className="audience-nav" id="portal-menu"><a href="#">CIDADÃO</a><a href="#">TURISTA</a><a href="#">SERVIDOR</a><a href="#">EMPRESAS</a><span>●　◉　●　◉</span></nav>
-            {portalPage === "home" ? <><section className="portal-hero selected-block" onClick={() => setRightTab("properties")}>
-              <span className="block-label">Destaque principal · selecionado</span>
-              <div className="recife-news"><div className="news-photo" role="img" aria-label="Praça central de Amargosa"><span>CIDADE JARDIM</span><button className="carousel-arrow previous" aria-label="Destaque anterior">‹</button><button className="carousel-arrow next" aria-label="Próximo destaque">›</button></div><div className="hero-copy"><small>GESTÃO MUNICIPAL</small><h1>{heroTitle}</h1><p>{heroDescription}</p></div></div>
-              <aside className="recife-services"><h2>ACESSO AOS SERVIÇOS</h2><div className="audience-tabs"><button className="active">Cidadão</button><button>Empresa</button><button>Turista</button><button>Servidor</button></div><div className="recife-service-grid">{recifeServiceAccess.map(([icon, title]) => <a href="#" key={title}><strong>{icon}</strong><span>{title}</span></a>)}</div><div className="slider-dots"><i /><i /></div></aside>
-            </section>
-            <section className="services"><div className="site-section-title"><div><small>ACESSO RÁPIDO</small><h2>Serviços mais procurados</h2></div><a href="#">Ver todos →</a></div><div className="service-grid">{serviceCards.map(([code, title, description]) => <a href="#" className="service-card" key={title} onClick={(event) => { event.preventDefault(); if (title === "Obras") { setPortalPage("obras"); setRightTab("properties"); } }}><span>{code}</span><div><strong>{title}</strong><small>{description}</small></div><b>→</b></a>)}</div></section></> : <section className="works-page">
-              <nav className="portal-breadcrumb" aria-label="Navegação estrutural"><button onClick={() => setPortalPage("home")}>Início</button><span>›</span><a href="#">Secretarias</a><span>›</span><strong>Obras e Urbanismo</strong></nav>
-              <header className="works-hero selected-block" onClick={() => setRightTab("properties")}><span className="block-label">Título e metadados · selecionado</span><div><small>SECRETARIA MUNICIPAL</small><h1>Obras e Urbanismo</h1><p>Serviços de manutenção urbana, infraestrutura, iluminação pública e acompanhamento das obras municipais.</p></div><strong className="works-monogram">OB</strong></header>
-              <div className="works-content">
-                <section className="works-services" aria-labelledby="works-services-title"><div className="works-section-heading"><small>SERVIÇOS AO CIDADÃO</small><h2 id="works-services-title">Como podemos ajudar?</h2></div><div className="works-card-grid"><a href="#"><span>01</span><strong>Solicitar manutenção urbana</strong><small>Buracos, calçadas e vias públicas</small><b>Solicitar →</b></a><a href="#"><span>02</span><strong>Iluminação pública</strong><small>Informar ponto apagado ou danificado</small><b>Solicitar →</b></a><a href="#"><span>03</span><strong>Licenças e alvarás</strong><small>Orientações para obras particulares</small><b>Consultar →</b></a><a href="#"><span>04</span><strong>Acompanhar solicitação</strong><small>Consulte o andamento do protocolo</small><b>Acompanhar →</b></a></div></section>
-                <div className="works-columns"><section className="active-works"><div className="works-section-heading"><small>TRANSPARÊNCIA</small><h2>Obras em andamento</h2></div><article><span>62%</span><div><small>BAIRRO SANTA RITA</small><strong>Requalificação da Praça do Cruzeiro</strong><p>Urbanização, iluminação e acessibilidade.</p></div></article><article><span>38%</span><div><small>CENTRO</small><strong>Recuperação de pavimentação</strong><p>Melhoria da drenagem e do pavimento.</p></div></article><button>Ver todas as obras e contratos →</button></section><aside className="works-contact"><small>ÓRGÃO RESPONSÁVEL</small><h2>Secretaria de Infraestrutura, Obras e Serviços Públicos</h2><dl><div><dt>Atendimento</dt><dd>Segunda a sexta, 8h às 14h</dd></div><div><dt>Telefone</dt><dd>(75) 3634-3977</dd></div><div><dt>Endereço</dt><dd>Praça Lourival Monte, Centro</dd></div><div><dt>E-mail</dt><dd>obras@amargosa.ba.gov.br</dd></div></dl><button>Falar com a Secretaria</button></aside></div>
-              </div>
-              <footer className="page-metadata"><span><small>Responsável</small>Secretaria de Infraestrutura</span><span><small>Fonte</small>Prefeitura de Amargosa</span><span><small>Última atualização</small>18 de agosto de 2026</span></footer>
-            </section>}
-            <section className="essential-strip" id="portal-footer"><div><small>ACESSOS PROTEGIDOS</small><strong>Transparência e participação</strong></div>{essentialLinks.slice(0, 4).map((item) => <a key={item} href="#">{item}<span>↗</span></a>)}</section>
-          </article>
-        </div>
-      </section>
-
-      <aside className="right-panel">
-        <div className="right-tabs">
-          <button className={rightTab === "properties" ? "active" : ""} onClick={() => setRightTab("properties")}>Design</button>
-          <button className={rightTab === "pntp" ? "active" : ""} onClick={() => setRightTab("pntp")}>PNTP <span>75</span></button>
-        </div>
-        {rightTab === "properties" ? <section className="properties">
-          <div className="selection-title"><span>Editor visual</span><em>Design</em></div>
-          <div className="content-lock"><i>◆</i><span><strong>Conteúdo protegido</strong><small>Textos, menus internos e abas são gerenciados fora do construtor. Aqui você altera somente design e estrutura visual.</small></span></div>
-          <fieldset className="design-group"><legend>Identidade</legend><div className="color-grid"><label>Principal<div><input type="color" value={design.primary} onChange={(event) => applyDesign({ ...design, primary: event.target.value }, "Cor principal")} /><span>{design.primary}</span></div></label><label>Secundária<div><input type="color" value={design.secondary} onChange={(event) => applyDesign({ ...design, secondary: event.target.value }, "Cor secundária")} /><span>{design.secondary}</span></div></label><label>Destaque<div><input type="color" value={design.accent} onChange={(event) => applyDesign({ ...design, accent: event.target.value }, "Cor de destaque")} /><span>{design.accent}</span></div></label><label>Superfície<div><input type="color" value={design.surface} onChange={(event) => applyDesign({ ...design, surface: event.target.value }, "Cor de superfície")} /><span>{design.surface}</span></div></label></div><label>Família tipográfica<select value={design.font} onChange={(event) => applyDesign({ ...design, font: event.target.value as FontStyle }, "Tipografia")}><option value="inter">Inter — neutra e digital</option><option value="source">Source Sans — institucional</option><option value="montserrat">Montserrat — geométrica</option><option value="merriweather">Merriweather — editorial</option></select></label></fieldset>
-          <fieldset className="design-group"><legend>Mistura de componentes</legend><label>Cabeçalho<select value={design.header} onChange={(event) => applyDesign({ ...design, header: event.target.value as HeaderStyle }, "Cabeçalho")}><option value="recife">Utilitário — inspirado em Recife</option><option value="belem">Cívico — inspirado em Belém</option><option value="salvador">Em camadas — inspirado em Salvador</option><option value="essential">Essencial — compacto</option></select></label><label>Menu principal<select value={design.menu} onChange={(event) => applyDesign({ ...design, menu: event.target.value as MenuStyle }, "Menu principal")}><option value="recife">Por públicos — Recife</option><option value="belem">Gaveta cívica — Belém</option><option value="salvador">Faixa institucional — Salvador</option><option value="minimal">Horizontal mínimo</option></select></label><label>Destaque da página inicial<select value={design.hero} onChange={(event) => applyDesign({ ...design, hero: event.target.value as HeroStyle }, "Destaque")}><option value="recife">Notícia + serviços — Recife</option><option value="belem">Editorial amplo — Belém</option><option value="salvador">Carrossel de impacto — Salvador</option><option value="search">Busca em primeiro plano</option></select></label><label>Serviços prioritários<select value={design.services} onChange={(event) => applyDesign({ ...design, services: event.target.value as ServicesStyle }, "Serviços prioritários")}><option value="icons">Ícones em grade</option><option value="cards">Cards descritivos</option><option value="list">Lista compacta</option></select></label><label>Rodapé<select value={design.footer} onChange={(event) => applyDesign({ ...design, footer: event.target.value as FooterStyle }, "Rodapé")}><option value="institutional">Institucional</option><option value="compact">Compacto</option><option value="portal">Portal de acessos</option></select></label></fieldset>
-          <fieldset className="design-group"><legend>Disposição</legend><div className="field-row"><label>Largura<select value={design.width} onChange={(event) => applyDesign({ ...design, width: event.target.value as DesignConfig["width"] }, "Largura")}><option value="wide">Ampla</option><option value="contained">Contida</option></select></label><label>Espaçamento<select value={design.spacing} onChange={(event) => applyDesign({ ...design, spacing: event.target.value as DesignConfig["spacing"] }, "Espaçamento")}><option value="compact">Compacto</option><option value="comfortable">Confortável</option><option value="airy">Arejado</option></select></label></div><label>Forma dos componentes<select value={design.radius} onChange={(event) => applyDesign({ ...design, radius: event.target.value as DesignConfig["radius"] }, "Forma dos componentes")}><option value="square">Cantos retos</option><option value="soft">Cantos suaves</option><option value="round">Cantos arredondados</option></select></label></fieldset>
-          <div className="score-guard"><div><small>PROJEÇÃO DESTA COMPOSIÇÃO</small><strong>{pntpScore.toFixed(1)}%</strong></div><span className={pntpScore >= 80 ? "safe" : "attention"}>Mínimo 75%</span><p>Mudanças que projetem resultado inferior a 75% são rejeitadas antes de alterar o rascunho.</p></div>
-        </section> : <section className="pntp-panel">
-          <div className="pntp-score"><div><small>ESTIMATIVA TÉCNICA PNTP</small><strong>{pntpScore.toFixed(1)}%</strong></div><span>mínimo protegido: 75%</span></div>
-          <div className="progress"><i style={{width: `${pntpScore}%`}} /></div>
-          <p className="score-disclaimer">A composição visual só é aplicada quando mantém a projeção em 75% ou mais. Estimativa baseada na matriz PNTP 2026; não representa certificação oficial.</p>
-          <div className="filter-chips"><button>Todos 84</button><button className="active">Design 6</button><button>Essenciais 12</button></div>
-          <div className="criteria-list">
-            <article className="criterion passed"><header><span>✓</span><div><small>DESIGN · CONTRASTE</small><strong>Cores e legibilidade</strong></div><em>Atendido</em></header><p>As combinações atuais mantêm contraste mínimo para textos e ações.</p></article>
-            <article className={design.hero === "salvador" ? "criterion pending" : "criterion passed"}><header><span>{design.hero === "salvador" ? "!" : "✓"}</span><div><small>DESIGN · MOVIMENTO</small><strong>Destaque e carrossel</strong></div><em>{design.hero === "salvador" ? "Atenção" : "Atendido"}</em></header><p>{design.hero === "salvador" ? "O carrossel exige pausa, controles acessíveis e respeito a movimento reduzido." : "O destaque atual não depende de rotação automática."}</p></article>
-            <article className="criterion passed"><header><span>✓</span><div><small>NÚCLEO PROTEGIDO</small><strong>Busca e acessos essenciais</strong></div><em>Atendido</em></header><p>Transparência, e-SIC, Ouvidoria, Diário Oficial, Carta de Serviços e busca permanecem presentes em qualquer combinação.</p></article>
-          </div>
-        </section>}
-        {rightTab === "properties" && <section className="compliance-card">
-          <div className="compliance-heading"><div><small>ESTIMATIVA TÉCNICA PNTP</small><strong>{pntpScore.toFixed(1)}%</strong></div><span>limite 75%</span></div>
-          <div className="progress"><i style={{width: `${pntpScore}%`}} /></div>
-          <div className="criteria-summary"><span><i className="ok" /> contraste válido</span><span><i className="warn" /> {design.hero === "salvador" ? "carrossel em atenção" : "sem alerta visual"}</span></div>
-          <div className="essential-warning"><strong>Proteção preventiva ativa</strong><p>O frontend rejeita mudanças abaixo de 75%; o backend deverá repetir a mesma validação antes de salvar ou publicar.</p></div>
-          <button className="view-checklist" onClick={() => setRightTab("pntp")}>Abrir checklist completo <span>→</span></button>
-        </section>}
-      </aside>
-
-      {toast && <div className="toast" role="status"><span>✓</span>{toast}</div>}
-      {blockedChange && <div className="modal-backdrop" role="presentation" onMouseDown={() => setBlockedChange(null)}><section className="publish-modal guard-modal" role="alertdialog" aria-modal="true" aria-labelledby="guard-title" onMouseDown={(event) => event.stopPropagation()}><span className="modal-icon">!</span><small>ALTERAÇÃO REJEITADA</small><h2 id="guard-title">Esta mudança reduziria a projeção abaixo de 75%.</h2><p><strong>{blockedChange.label}</strong> produziria uma estimativa técnica de <strong>{blockedChange.score.toFixed(1)}%</strong>. O rascunho anterior foi preservado.</p><div className="guard-scale"><span>0</span><i><b style={{width: `${blockedChange.score}%`}} /></i><em>75% mínimo</em><strong>100</strong></div><div className="modal-actions"><button className="button primary" onClick={() => setBlockedChange(null)}>Entendi, manter composição</button></div></section></div>}
-      {publishOpen && <div className="modal-backdrop" role="presentation" onMouseDown={() => setPublishOpen(false)}><section className="publish-modal" role="dialog" aria-modal="true" aria-labelledby="publish-title" onMouseDown={(event) => event.stopPropagation()}><span className="modal-icon publish-ready">✓</span><small>VALIDAÇÃO DE DESIGN CONCLUÍDA</small><h2 id="publish-title">A composição mantém a projeção mínima.</h2><p>O design atual está em <strong>{pntpScore.toFixed(1)}%</strong>. Em produção, o backend repetirá as validações antes de criar uma versão publicável.</p><div className="impact"><span>Limite obrigatório<strong>75%</strong></span><b>≤</b><span>Este rascunho<strong>{pntpScore.toFixed(1)}%</strong></span></div><div className="modal-actions"><button className="button secondary" onClick={() => setPublishOpen(false)}>Voltar à edição</button><button className="button primary" onClick={() => { setPublishOpen(false); setRightTab("pntp"); }}>Ver checklist</button></div></section></div>}
-    </main>
-  );
+  const segmentStyleVariables=Object.fromEntries([...(Object.entries(segmentColors).flatMap(([section,value])=>[[`--segment-${section}-color`,value],[`--segment-${section}-ink`,readableInk(value)]])),...(Object.entries(segmentImages).map(([section,value])=>[`--segment-${section}-image`,`url("${value}")`]))]);
+  const themeStyle={"--portal-primary":design.primary,"--portal-secondary":design.secondary,"--portal-accent":design.accent,"--portal-surface":design.surface,...segmentStyleVariables} as CSSProperties;
+  const customSegmentClasses=[...Object.keys(segmentColors).map(section=>`has-color-${section}`),...Object.keys(segmentImages).map(section=>`has-image-${section}`)];
+  const classes=["public-portal",`archetype-${design.archetype}`,`utility-${design.utility}`,`header-${design.header}`,`menu-${design.menu}`,`search-${design.search}`,`hero-${design.hero}`,`services-${design.services}`,`news-${design.news}`,`transparency-${design.transparency}`,`footer-${design.footer}`,`font-${design.font}`,`width-${design.width}`,`spacing-${design.spacing}`,`radius-${design.radius}`,...customSegmentClasses,selectedSection?`builder-focus-${selectedSection}`:""].filter(Boolean).join(" ");
+  return <main className="builder-shell">
+    <header className="builder-topbar"><div className="builder-brand"><span>A</span><div><strong>Construtor Amargosa</strong><small>Modelo municipal modular</small></div></div><div className="builder-status"><i/> Estrutura compatível <strong>{score.toFixed(1)}%</strong><span>mínimo preventivo 80%</span></div><div className="builder-actions"><div className="device-switch">{(["desktop","tablet","mobile"] as Device[]).map(item=><button key={item} className={device===item?"active":""} onClick={()=>setDevice(item)}>{item==="desktop"?"Desktop":item==="tablet"?"Tablet":"Mobile"}</button>)}</div><button className="button secondary" onClick={()=>{setRightTab("pntp");notify("Composição validada preventivamente.")}}>Validar</button><button className="button primary" onClick={()=>setPublishOpen(true)}>Publicar</button></div></header>
+    <aside className="left-panel"><div className="left-tabs"><button className={leftTab==="structure"?"active":""} onClick={()=>setLeftTab("structure")}>Estrutura</button><button className={leftTab==="recipes"?"active":""} onClick={()=>{setLeftTab("recipes");setSelectedSection(null)}}>Modelos</button></div>
+      {leftTab==="structure"&&<section className="left-content"><PanelHeading title="Selecione a estrutura" meta=""/><nav className="structure-list">{structure.map((item,index)=><button key={item.id} className={selectedSection===item.id?"active":""} onClick={()=>selectSection(item.id)}><span>{String(index+1).padStart(2,"0")}</span><strong>{item.name}</strong></button>)}</nav></section>}
+      {leftTab==="recipes"&&<section className="left-content"><PanelHeading title="Modelos completos" meta=""/><p className="panel-intro">Troque toda a organização estrutural do portal de uma só vez.</p><div className="recipe-list">{recipes.map(recipe=><button key={recipe.id} className={activeRecipe===recipe.id?"active":""} onClick={()=>applyRecipe(recipe)}><span className={`recipe-preview preview-${recipe.archetype}`}><i/><i/><i/></span><span><small>{recipe.city}</small><strong>{recipe.name}</strong><em>{recipe.description}</em><b className={`medal medal-${recipe.medal.toLowerCase()}`}>{recipe.medal} · {recipe.score.toFixed(2)}%</b></span></button>)}</div></section>}
+    </aside>
+    <section className={`workspace device-${device}`}><div className="canvas-toolbar"><span>Prévia do modelo genérico</span><strong>{sizes[device]} · 100%</strong></div><div className="site-frame"><div className="browser-bar"><i/><i/><i/><span>amargosa.ba.gov.br{portalPage==="obras"?"/obras":""}</span></div>
+      <article ref={portalRef} className={classes} style={themeStyle}>
+        <div className="accessibility-bar"><div className="portal-boundary"><nav {...itemAttrs("utility","shortcuts")}><span className="builder-inline-icon">{itemIcon("utility","shortcuts","↳")}</span><a href="#portal-main">Ir para o conteúdo</a><a href="#portal-menu">Ir para o menu</a><a href="#portal-search">Ir para a busca</a></nav><div><button {...itemAttrs("utility","font-size")}>{itemIcon("utility","font-size","A−")}</button><button {...itemAttrs("utility","font-size")}>A+</button><button {...itemAttrs("utility","contrast")}><span className="builder-inline-icon">{itemIcon("utility","contrast","◐")}</span>Contraste</button><button {...itemAttrs("utility","accessibility")}><span className="builder-inline-icon">{itemIcon("utility","accessibility","♿")}</span>Acessibilidade</button></div></div></div>
+        <header className="portal-header"><div className="portal-boundary"><a {...itemAttrs("header","brand","city-brand")} href="#" onClick={e=>{e.preventDefault();setPortalPage("home")}}><span>{itemIcon("header","brand","AM")}</span><div><small>PREFEITURA DE</small><strong>AMARGOSA</strong><em>Cidade Jardim de Todos</em></div></a><div className="header-tools"><nav><a {...itemAttrs("header","transparency")} href="#"><span className="builder-inline-icon">{itemIcon("header","transparency","◫")}</span>Transparência</a><a {...itemAttrs("header","esic")} href="#"><span className="builder-inline-icon">{itemIcon("header","esic","@")}</span>e-SIC</a><a {...itemAttrs("header","ombudsman")} href="#"><span className="builder-inline-icon">{itemIcon("header","ombudsman","◇")}</span>Ouvidoria</a></nav><form {...itemAttrs("header","search","header-search")} onSubmit={event=>event.preventDefault()}><label className="sr-only" htmlFor="header-search-input">Pesquisar no portal</label><input id="header-search-input" placeholder="Pesquisa no site"/><button><span className="builder-inline-icon">{itemIcon("header","search","⌕")}</span>Buscar</button></form><a {...itemAttrs("header","cta","header-cta")} href="#"><span className="builder-inline-icon">{itemIcon("header","cta","→")}</span>Fale com a Prefeitura</a><div {...itemAttrs("header","contact","header-contact")}><span><i className="builder-inline-icon">{itemIcon("header","contact","☎")}</i>Atendimento ao cidadão</span><strong>(75) 3634-3977</strong></div></div></div></header>
+        <nav className="portal-menu" id="portal-menu"><div className="portal-boundary"><button className="menu-trigger">☰ <span>Menu</span></button><div className="menu-links"><a {...itemAttrs("menu","municipality")} href="#"><span className="builder-inline-icon">{itemIcon("menu","municipality","⌂")}</span>O Município</a><a {...itemAttrs("menu","departments")} href="#"><span className="builder-inline-icon">{itemIcon("menu","departments","▦")}</span>Secretarias</a><a {...itemAttrs("menu","services")} href="#"><span className="builder-inline-icon">{itemIcon("menu","services","◆")}</span>Serviços</a><a {...itemAttrs("menu","information")} href="#"><span className="builder-inline-icon">{itemIcon("menu","information","▤")}</span>Informativos</a><a {...itemAttrs("menu","publications")} href="#"><span className="builder-inline-icon">{itemIcon("menu","publications","▧")}</span>Publicações</a><a {...itemAttrs("menu","transparency")} href="#"><span className="builder-inline-icon">{itemIcon("menu","transparency","◫")}</span>Transparência</a></div><div className="audience-links"><a {...itemAttrs("menu","citizen")} href="#"><span className="builder-inline-icon">{itemIcon("menu","citizen","●")}</span>Cidadão</a><a {...itemAttrs("menu","company")} href="#"><span className="builder-inline-icon">{itemIcon("menu","company","●")}</span>Empresa</a><a {...itemAttrs("menu","employee")} href="#"><span className="builder-inline-icon">{itemIcon("menu","employee","●")}</span>Servidor</a><a {...itemAttrs("menu","tourist")} href="#"><span className="builder-inline-icon">{itemIcon("menu","tourist","●")}</span>Turista</a></div></div></nav>
+        <section className="search-module" id="portal-search"><div className="portal-boundary"><div {...itemAttrs("search","copy","search-copy")}><small>SERVIÇOS E INFORMAÇÕES</small><strong><span className="builder-inline-icon">{itemIcon("search","copy","⌕")}</span>O que você procura?</strong></div><form {...itemAttrs("search","field")}><label className="sr-only" htmlFor="portal-search-input">Pesquisar no portal</label><input id="portal-search-input" placeholder="Digite um serviço, documento ou assunto"/><button {...itemAttrs("search","button")}><span className="builder-inline-icon">{itemIcon("search","button","⌕")}</span>Buscar</button></form><nav><span {...itemAttrs("search","popular-label")}><i className="builder-inline-icon">{itemIcon("search","popular-label","#")}</i>Mais buscados:</span><a {...itemAttrs("search","iptu")} href="#"><i className="builder-inline-icon">{itemIcon("search","iptu","$")}</i>IPTU</a><a {...itemAttrs("search","health")} href="#"><i className="builder-inline-icon">{itemIcon("search","health","+")}</i>Saúde</a><a {...itemAttrs("search","invoice")} href="#"><i className="builder-inline-icon">{itemIcon("search","invoice","▤")}</i>Nota fiscal</a><a {...itemAttrs("search","gazette")} href="#"><i className="builder-inline-icon">{itemIcon("search","gazette","▧")}</i>Diário Oficial</a></nav></div></section>
+        <main id="portal-main">{portalPage==="home"?<>
+          <section className="hero-module module-slot"><div className="portal-boundary"><div className="hero-card"><div {...itemAttrs("hero","media","hero-media")} role="img" aria-label="Praça central de Amargosa"><span>{itemIcon("hero","media","▣")} CIDADE JARDIM</span><button className="carousel previous" aria-label="Destaque anterior">‹</button><button className="carousel next" aria-label="Próximo destaque">›</button></div><div className="hero-content"><small {...itemAttrs("hero","category")}><span className="builder-inline-icon">{itemIcon("hero","category","●")}</span>GESTÃO MUNICIPAL</small><h1 {...itemAttrs("hero","title")}><span className="builder-inline-icon">{itemIcon("hero","title","")}</span>Serviços públicos de um jeito simples.</h1><p {...itemAttrs("hero","description")}><span className="builder-inline-icon">{itemIcon("hero","description","")}</span>Encontre informações, solicite atendimentos e acompanhe a Prefeitura em um só lugar.</p><div className="hero-details"><span>18 AGO 2026</span><span>Informação atualizada</span></div><a {...itemAttrs("hero","action")} href="#"><span className="builder-inline-icon">{itemIcon("hero","action","")}</span>Saiba mais →</a></div></div><aside className="hero-services"><header {...itemAttrs("hero","services")}><small>PARA VOCÊ</small><h2><span className="builder-inline-icon">{itemIcon("hero","services","▦")}</span>Acesso aos serviços</h2></header><div className="audience-tabs"><button {...itemAttrs("hero","citizen","active")}><span className="builder-inline-icon">{itemIcon("hero","citizen","●")}</span>Cidadão</button><button {...itemAttrs("hero","company")}><span className="builder-inline-icon">{itemIcon("hero","company","●")}</span>Empresa</button><button {...itemAttrs("hero","tourist")}><span className="builder-inline-icon">{itemIcon("hero","tourist","●")}</span>Turista</button><button {...itemAttrs("hero","employee")}><span className="builder-inline-icon">{itemIcon("hero","employee","●")}</span>Servidor</button></div><div className="quick-grid">{quickActions.map(([icon,title],index)=><a {...itemAttrs("hero",quickActionIds[index])} href="#" key={title}><strong>{itemIcon("hero",quickActionIds[index],icon)}</strong><span>{title}</span></a>)}</div></aside><div {...itemAttrs("hero","controls","carousel-status")}><button aria-label="Pausar carrossel">{itemIcon("hero","controls","Ⅱ")}</button><span className="active"/><span/><span/></div></div></section>
+          <section className="services-module module-slot"><div className="portal-boundary"><SectionHeading eyebrow="ACESSO RÁPIDO" title="Serviços mais procurados" description="Encontre a tarefa certa sem navegar por estruturas internas." action="Ver todos os serviços →"/><div className="service-grid">{services.map(([code,title,description],index)=><a {...itemAttrs("services",segmentItems.services[index].id,"service-card")} href="#" key={title} onClick={e=>{e.preventDefault();if(title==="Obras")setPortalPage("obras")}}><span>{itemIcon("services",segmentItems.services[index].id,code)}</span><div><strong>{title}</strong><small>{description}</small></div><b>→</b></a>)}</div></div></section>
+          <section className="news-module module-slot"><div className="portal-boundary"><SectionHeading eyebrow="INFORMAÇÃO PÚBLICA" title="Notícias e agenda" description="Acompanhe ações, serviços e acontecimentos do município." action="Todas as notícias →"/><div className="stories-row">{["Saúde","Educação","Cultura","Obras","Turismo"].map((item,index)=><a {...itemAttrs("news",storyShortcutIds[index])} href="#" key={item}><i>{itemIcon("news",storyShortcutIds[index],item.slice(0,2).toUpperCase())}</i><span>{item}</span></a>)}</div><div className="news-grid">{newsItems.map(([tag,title,description],index)=><article {...itemAttrs("news",`story-${index+1}`,index===0?"lead":"")} key={title}><div className={`news-image image-${index+1}`}/><div><small><span className="builder-inline-icon">{itemIcon("news",`story-${index+1}`,String(index+1).padStart(2,"0"))}</span>{tag} · 18 AGO</small><h3>{title}</h3><p>{description}</p><a href="#">Ler notícia →</a></div></article>)}</div></div></section>
+        </>:<section className="internal-page module-slot"><div className="portal-boundary"><nav className="breadcrumb"><button onClick={()=>setPortalPage("home")}>Início</button><span>›</span><a href="#">Secretarias</a><span>›</span><strong>Obras</strong></nav><header><div><small>SECRETARIA MUNICIPAL</small><h1>Obras e Urbanismo</h1><p>Manutenção urbana, infraestrutura, iluminação pública e acompanhamento das obras municipais.</p></div><span>OB</span></header><section><div><small>SERVIÇOS AO CIDADÃO</small><h2>Como podemos ajudar?</h2></div><div className="internal-grid">{[["Manutenção urbana","Buracos, calçadas e vias"],["Iluminação pública","Informar ponto apagado"],["Licenças e alvarás","Orientações para obras"],["Acompanhar solicitação","Consulte seu protocolo"]].map(([title,desc])=><a href="#" key={title}><strong>{title}</strong><small>{desc}</small></a>)}</div></section></div></section>}</main>
+        <section className="transparency-module"><div className="portal-boundary"><header><small>ACESSOS PÚBLICOS</small><strong>Transparência e participação</strong></header><nav>{protectedLinks.map((item,index)=><a {...itemAttrs("transparency",segmentItems.transparency[index].id)} href="#" key={item}><i className="builder-inline-icon">{itemIcon("transparency",segmentItems.transparency[index].id,segmentItems.transparency[index].icon)}</i>{item}<span>↗</span></a>)}</nav></div></section>
+        <footer className="portal-footer"><div className="portal-boundary"><a {...itemAttrs("footer","brand","footer-brand")} href="#"><span>{itemIcon("footer","brand","AM")}</span><div><strong>Prefeitura de Amargosa</strong><small>Cidade Jardim de Todos</small></div></a><div {...itemAttrs("footer","contact","footer-contact")}><strong><i className="builder-inline-icon">{itemIcon("footer","contact","☎")}</i>Atendimento</strong><span>Praça Lourival Monte, Centro</span><span>Segunda a sexta, 8h às 14h</span><span>(75) 3634-3977</span></div><nav><strong>Institucional</strong><a {...itemAttrs("footer","site-map")} href="#"><i className="builder-inline-icon">{itemIcon("footer","site-map","▤")}</i>Mapa do site</a><a {...itemAttrs("footer","accessibility")} href="#"><i className="builder-inline-icon">{itemIcon("footer","accessibility","♿")}</i>Acessibilidade</a><a {...itemAttrs("footer","privacy")} href="#"><i className="builder-inline-icon">{itemIcon("footer","privacy","◇")}</i>Política de privacidade</a></nav><nav><strong>Acessos oficiais</strong><a {...itemAttrs("footer","bids")} href="#"><i className="builder-inline-icon">{itemIcon("footer","bids","▧")}</i>Licitações</a><a {...itemAttrs("footer","legislation")} href="#"><i className="builder-inline-icon">{itemIcon("footer","legislation","§")}</i>Legislação</a><a {...itemAttrs("footer","departments")} href="#"><i className="builder-inline-icon">{itemIcon("footer","departments","▦")}</i>Secretarias e órgãos</a></nav></div></footer>
+      </article></div></section>
+    <aside className="right-panel"><div className="right-tabs"><button className={rightTab==="design"?"active":""} onClick={()=>setRightTab("design")}>Design</button><button className={rightTab==="pntp"?"active":""} onClick={()=>setRightTab("pntp")}>PNTP</button></div>
+      {rightTab==="design"?<section className="design-panel"><div className="editor-heading"><div><small>{selectedItemDefinition?"ITEM SELECIONADO":selectedStructure?"SEGMENTO SELECIONADO":"IDENTIDADE GERAL"}</small><strong>{selectedItemDefinition?.name??selectedStructure?.name??activeStyle?.name??"Personalizado"}</strong></div><button onClick={selectedItemDefinition?resetSelectedItem:restoreEditor}>Restaurar</button></div>
+        {selectedStructure&&selectedSection?<><div className="contract-note"><i>◆</i><div><strong>Configuração do segmento</strong><p>{selectedStructure.description}</p></div></div><fieldset><legend>Design desta estrutura</legend><SelectField label={segmentOptions[selectedSection].label} value={String(design[selectedSection])} onChange={value=>applyDesign({...design,[selectedSection]:value} as DesignConfig,selectedStructure.name)} options={segmentOptions[selectedSection].options}/><ColorField label="Cor deste segmento" value={segmentColors[selectedSection]??design.primary} onChange={value=>setSegmentColors(current=>({...current,[selectedSection]:value}))}/><ImageField value={segmentImages[selectedSection]} onChange={file=>setSegmentImage(selectedSection,file)} onRemove={()=>setSegmentImages(current=>{const next={...current};delete next[selectedSection];return next})}/><div className="placement-rule"><strong>Personalização local</strong><p>{segmentOptions[selectedSection].note}</p></div></fieldset><fieldset className="item-selector-fieldset"><legend>Itens desta estrutura</legend><p className="item-selector-help">Selecione abaixo ou clique diretamente em um item na prévia para personalizá-lo sem alterar os demais.</p><div className="segment-item-list">{segmentItems[selectedSection].map(item=><button type="button" key={item.id} className={selectedItem===item.id?"active":""} onClick={()=>selectItem(item.id)}><i>{itemStyles[`${selectedSection}.${item.id}`]?.icon??item.icon}</i><span>{item.name}</span></button>)}</div>{selectedItemDefinition&&selectedItemKey&&<div className="item-editor"><header><small>EDIÇÃO INDIVIDUAL</small><strong>{selectedItemDefinition.name}</strong></header><label className="text-field"><span>Ícone ou símbolo</span><input type="text" maxLength={8} value={itemStyles[selectedItemKey]?.icon??selectedItemDefinition.icon} onChange={event=>updateItemStyle({icon:event.target.value})} placeholder="Ex.: ★, ☎ ou AM"/></label><SelectField label="Fonte deste item" value={itemStyles[selectedItemKey]?.font??"inherit"} onChange={value=>updateItemStyle({font:value as ItemFont})} options={[["inherit","Herdar do segmento"],["inter","Inter — neutra"],["source","Source Sans — institucional"],["montserrat","Montserrat — geométrica"],["merriweather","Merriweather — editorial"]]}/><ColorField label="Cor deste item" value={itemStyles[selectedItemKey]?.color??segmentColors[selectedSection]??design.primary} onChange={value=>updateItemStyle({color:value})}/><SelectField label="Formato deste item" value={itemStyles[selectedItemKey]?.format??"default"} onChange={value=>updateItemStyle({format:value as ItemFormat})} options={[["default","Padrão do segmento"],["rounded","Cantos arredondados"],["pill","Formato cápsula"],["outlined","Com contorno"],["filled","Fundo preenchido"],["shadow","Com sombra"]]}/><button type="button" className="reset-item-button" onClick={resetSelectedItem}>Restaurar somente este item</button></div>}</fieldset></>:<><div className="contract-note"><i>◆</i><div><strong>Identidade visual geral</strong><p>Para personalizar apenas uma parte do portal, escolha-a na aba Estrutura.</p></div></div><fieldset><legend>Identidade de Amargosa</legend><div className="color-grid"><ColorField label="Principal" value={design.primary} onChange={value=>applyDesign({...design,primary:value},"Cor principal","visual")}/><ColorField label="Secundária" value={design.secondary} onChange={value=>applyDesign({...design,secondary:value},"Cor secundária","visual")}/><ColorField label="Destaque" value={design.accent} onChange={value=>applyDesign({...design,accent:value},"Cor de destaque","visual")}/><ColorField label="Superfície" value={design.surface} onChange={value=>applyDesign({...design,surface:value},"Cor de superfície","visual")}/></div><SelectField label="Tipografia" value={design.font} onChange={value=>applyDesign({...design,font:value as DesignConfig["font"]},"Tipografia","visual")} options={[["inter","Inter — neutra e digital"],["source","Source Sans — institucional"],["montserrat","Montserrat — geométrica"],["merriweather","Merriweather — editorial"]]}/></fieldset><fieldset><legend>Disposição visual compartilhada</legend><div className="field-row"><SelectField label="Largura" value={design.width} onChange={value=>applyDesign({...design,width:value as DesignConfig["width"]},"Largura","visual")} options={[["wide","Ampla"],["contained","Contida"]]}/><SelectField label="Espaçamento" value={design.spacing} onChange={value=>applyDesign({...design,spacing:value as DesignConfig["spacing"]},"Espaçamento","visual")} options={[["compact","Compacto"],["comfortable","Confortável"],["airy","Arejado"]]}/></div><SelectField label="Forma dos componentes" value={design.radius} onChange={value=>applyDesign({...design,radius:value as DesignConfig["radius"]},"Forma","visual")} options={[["square","Cantos retos"],["soft","Cantos suaves"],["round","Cantos arredondados"]]}/></fieldset></>}</section>:<section className="pntp-panel"><div className="pntp-score"><div><small>ESTIMATIVA TÉCNICA</small><strong>{score.toFixed(1)}%</strong></div><span>mínimo preventivo: 80%</span></div><div className="progress"><i style={{width:`${score}%`}}/></div><p>A validação considera contraste, disposição e acesso direto às funções essenciais.</p><div className="desktop-audit"><header><div><small>TESTE DE COMPATIBILIDADE · DESKTOP</small><strong>{desktopAuditTotal} combinações representativas</strong></div><span>{audit.running?`${Math.round(audit.tested/desktopAuditTotal*100)}%`:audit.tested===desktopAuditTotal?(audit.bugs?"Falhas":"Aprovado"):"Não executado"}</span></header><div className="audit-progress"><i style={{width:`${audit.tested/desktopAuditTotal*100}%`}}/></div><p>Verifica encaixe, transbordamento, alturas e os cinco acessos essenciais.</p><button disabled={audit.running} onClick={runDesktopAudit}>{audit.running?`Testando ${audit.tested.toLocaleString("pt-BR")} de ${desktopAuditTotal.toLocaleString("pt-BR")}…`:audit.tested===desktopAuditTotal?"Executar novamente":"Testar compatibilidade"}</button>{audit.bugs>0&&<div className="audit-errors"><strong>{audit.bugs} falhas encontradas</strong>{audit.examples.map(example=><code key={example}>{example}</code>)}</div>}</div><div className="criteria"><Criterion title="Contraste e legibilidade" description="Cores atuais mantêm leitura adequada nos componentes essenciais."/><Criterion title="Disposição funcional" description="A organização dos segmentos influencia a estimativa."/><Criterion title="Transparência direta" description="Os cinco acessos essenciais continuam disponíveis na página."/><Criterion title="Conteúdo preservado" description="O construtor altera design, não o conteúdo interno."/></div></section>}
+    </aside>
+    {toast&&<div className="toast" role="status"><span>✓</span>{toast}</div>}
+    {blocked&&<div className="modal-backdrop"><section className="modal" role="alertdialog" aria-modal="true"><span className="modal-icon danger">!</span><small>ALTERAÇÃO REJEITADA</small><h2>{blocked.reason?"Uma estrutura obrigatória seria comprometida.":"A projeção ficaria abaixo de 80%."}</h2><p><strong>{blocked.label}</strong> foi bloqueado. {blocked.reason??`A estimativa seria de ${blocked.score.toFixed(1)}%.`} A composição anterior foi preservada.</p><button className="button primary" onClick={()=>setBlocked(null)}>Manter composição segura</button></section></div>}
+    {publishOpen&&<div className="modal-backdrop"><section className="modal" role="dialog" aria-modal="true"><span className="modal-icon">✓</span><small>VALIDAÇÃO PREVENTIVA CONCLUÍDA</small><h2>O rascunho mantém a estrutura protegida.</h2><p>Projeção atual: <strong>{score.toFixed(1)}%</strong>. Em produção, o backend deverá repetir as verificações antes de salvar ou publicar.</p><div className="modal-actions"><button className="button secondary" onClick={()=>setPublishOpen(false)}>Voltar</button><button className="button primary" onClick={()=>{setPublishOpen(false);setRightTab("pntp")}}>Ver critérios</button></div></section></div>}
+  </main>
 }
+
+function PanelHeading({title,meta}:{title:string;meta:string}){return <div className="panel-heading"><span>{title}</span>{meta&&<em>{meta}</em>}</div>}
+function SectionHeading({eyebrow,title,description,action}:{eyebrow:string;title:string;description:string;action:string}){return <header className="section-heading"><div><small>{eyebrow}</small><h2>{title}</h2><p>{description}</p></div><a href="#">{action}</a></header>}
+function SelectField({label,value,options,onChange}:{label:string;value:string;options:string[][];onChange:(value:string)=>void}){return <label className="select-field"><span>{label}</span><select value={value} onChange={e=>onChange(e.target.value)}>{options.map(([v,l])=><option value={v} key={v}>{l}</option>)}</select></label>}
+function ColorField({label,value,onChange}:{label:string;value:string;onChange:(value:string)=>void}){return <label className="color-field"><span>{label}</span><div><input type="color" value={value} onChange={e=>onChange(e.target.value)}/><code>{value}</code></div></label>}
+function ImageField({value,onChange,onRemove}:{value?:string;onChange:(file?:File)=>void;onRemove:()=>void}){return <div className="image-field"><span>Imagem deste segmento</span><label><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={event=>onChange(event.target.files?.[0])}/><strong>{value?"Trocar imagem":"Selecionar imagem"}</strong></label>{value&&<div className="image-preview"><img src={value} alt="Prévia da imagem selecionada"/><button type="button" onClick={onRemove}>Remover</button></div>}<small>PNG, JPG, WEBP ou GIF de até 5 MB.</small></div>}
+function Criterion({title,description}:{title:string;description:string}){return <article><span>✓</span><div><strong>{title}</strong><p>{description}</p></div><em>Atendido</em></article>}

@@ -1,11 +1,6 @@
 import assert from "node:assert/strict";
-import { access, readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
-
-const developmentPreviewMeta =
-  /<meta(?=[^>]*\bname=["']codex-preview["'])(?=[^>]*\bcontent=["']development["'])[^>]*>/i;
-const templateRoot = new URL("../", import.meta.url);
-const previewRoot = new URL("../app/_sites-preview/", import.meta.url);
 
 async function render() {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -13,79 +8,105 @@ async function render() {
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
-    new Request("http://localhost/", {
-      headers: { accept: "text/html" },
-    }),
-    {
-      ASSETS: {
-        fetch: async () => new Response("Not found", { status: 404 }),
-      },
-    },
-    {
-      waitUntil() {},
-      passThroughOnException() {},
-    },
+    new Request("http://localhost/", { headers: { accept: "text/html" } }),
+    { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
+    { waitUntil() {}, passThroughOnException() {} },
   );
 }
 
-test("server-renders the starter loading skeleton", async () => {
+test("server-renders the current municipal builder", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, developmentPreviewMeta);
-  assert.match(html, /<title>Your site is taking shape<\/title>/i);
-  assert.match(html, /Building your site/);
-  assert.match(html, /Your site is taking shape/);
-  assert.match(
-    html,
-    /Your first version will appear here automatically when it’s ready\./,
-  );
-  assert.doesNotMatch(html, /Codex/);
-  assert.match(html, /react-loading-skeleton/);
-  assert.match(html, /role="status"/);
+  assert.match(html, /<title>Construtor Municipal · Protótipo PNTP<\/title>/i);
+  assert.match(html, />Selecione a estrutura</);
+  assert.match(html, />Estrutura<\/button><button class="">Modelos<\/button>/);
+  assert.match(html, />Design<\/button><button class="">PNTP<\/button>/);
+  assert.match(html, /Acessibilidade/);
+  assert.match(html, /Rodapé e contato/);
+  assert.match(html, /ACESSOS PÚBLICOS/);
+  assert.doesNotMatch(html, />PROTEGIDO</);
+  assert.doesNotMatch(html, />VISUAL</);
+  assert.doesNotMatch(html, /PROJEÇÃO PREVENTIVA/);
+  assert.doesNotMatch(html, /PNTP <span>80/);
 });
 
-test("keeps the loading skeleton scoped and disposable", async () => {
-  const [preview, css, page, layout, packageJson, files] = await Promise.all([
-    readFile(new URL("SkeletonPreview.tsx", previewRoot), "utf8"),
-    readFile(new URL("preview.css", previewRoot), "utf8"),
+test("keeps seven design options and local media controls for every segment", async () => {
+  const [page, css] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../package.json", import.meta.url), "utf8"),
-    readdir(previewRoot),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
-  assert.deepEqual(files.sort(), ["SkeletonPreview.tsx", "preview.css"]);
-  assert.match(preview, /from "react-loading-skeleton"/);
-  assert.match(preview, /baseColor="#eceae7"/);
-  assert.match(preview, /highlightColor="#f9f8f6"/);
-  assert.match(preview, /duration=\{2\.8\}/);
-  assert.match(preview, /sites-skeleton-search-placeholder/);
-  assert.match(packageJson, /"react-loading-skeleton": "3\.5\.0"/);
+  const segmentNames = [
+    "utility",
+    "header",
+    "menu",
+    "search",
+    "hero",
+    "services",
+    "news",
+    "transparency",
+    "footer",
+  ];
 
-  const shellIndex = preview.indexOf('className="sites-skeleton-shell"');
-  const statusIndex = preview.indexOf('className="sites-skeleton-status"');
-  assert.ok(shellIndex >= 0 && statusIndex > shellIndex);
-  assert.match(css, /position:\s*fixed/);
-  assert.match(css, /inset:\s*0/);
-  assert.match(css, /opacity:\s*0\.52/);
-  assert.match(css, /prefers-reduced-motion:\s*reduce/);
-  assert.doesNotMatch(css, /#020617|canvas|pets|progress/i);
-  assert.doesNotMatch(
-    preview,
-    /loading-spinner|status-mark|status-progress|canvas|cookie|random/i,
-  );
+  for (const name of segmentNames) {
+    const line = page.split("\n").find((entry) => entry.trimStart().startsWith(`${name}:{label:`));
+    assert.ok(line, `missing options for ${name}`);
+    assert.equal((line.match(/\[\[|\],\[/g) ?? []).length, 7, `${name} should expose seven options`);
+  }
 
-  assert.match(page, /export const metadata:\s*Metadata/);
-  assert.match(page, /"codex-preview": "development"/);
-  assert.match(page, /<SkeletonPreview \/>/);
-  assert.match(layout, /title:\s*"Starter Project"/);
-  assert.doesNotMatch(layout, /codex-preview|_sites-preview|themeColor|\bViewport\b/);
-  assert.doesNotMatch(css, /(^|\s)(html|body)\s*\{/m);
+  assert.match(page, /type="file"/);
+  assert.match(page, /image\/png,image\/jpeg,image\/webp,image\/gif/);
+  assert.match(page, /5\*1024\*1024/);
+  assert.match(page, /Cor deste segmento/);
+  assert.match(css, /Sete variações por segmento/);
+  assert.match(css, /has-image-hero/);
+  assert.match(css, /has-color-transparency/);
+});
 
-  await assert.rejects(
-    access(new URL("public/_sites-preview", templateRoot)),
-  );
+test("keeps Recife, Belem and Belo Horizonte headers structurally distinct", async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(page, /id:"recife"[^\n]+header:"service"/);
+  assert.match(page, /id:"belem"[^\n]+header:"institutional"/);
+  assert.match(page, /id:"belo-horizonte"[^\n]+header:"controlled"/);
+  assert.match(page, /itemAttrs\("header","search","header-search"\)/);
+  assert.match(page, /itemAttrs\("header","cta","header-cta"\)/);
+
+  assert.match(css, /Recife: marca à esquerda, links e busca à direita/);
+  assert.match(css, /header-service \.header-search[^}]+display:flex/);
+  assert.match(css, /Belém: menu à esquerda, busca central e marca à direita/);
+  assert.match(css, /header-institutional \.city-brand\{grid-column:3/);
+  assert.match(css, /Belo Horizonte: marca, navegação central e CTA lateral/);
+  assert.match(css, /header-controlled \.header-cta[^}]+display:inline-flex/);
+});
+
+test("supports selecting and styling individual items inside every segment", async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(page, /const segmentItems: Record<SectionId,SegmentItem\[]>/);
+  assert.match(page, /Itens desta estrutura/);
+  assert.match(page, /Ícone ou símbolo/);
+  assert.match(page, /Fonte deste item/);
+  assert.match(page, /Cor deste item/);
+  assert.match(page, /Formato deste item/);
+  assert.match(page, /Restaurar somente este item/);
+  assert.match(page, /data-builder-item/);
+  assert.match(page, /builder-item-selected/);
+  assert.match(page, /onClickCapture/);
+
+  assert.match(css, /Edição em dois níveis: segmento e item interno/);
+  assert.match(css, /\.segment-item-list/);
+  assert.match(css, /\.item-custom-font/);
+  assert.match(css, /\.item-custom-color/);
+  assert.match(css, /\.item-format-pill/);
+  assert.match(css, /\.builder-item-selected/);
 });
